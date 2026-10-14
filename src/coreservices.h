@@ -17,6 +17,7 @@ class RecordingManager;
 class BroadcastManager;
 #endif
 class ControllerManager;
+class OscServer;
 class VinylControlManager;
 class TrackCollectionManager;
 class Library;
@@ -134,6 +135,9 @@ class CoreServices : public QObject {
     std::shared_ptr<BroadcastManager> m_pBroadcastManager;
 #endif
     std::shared_ptr<ControllerManager> m_pControllerManager;
+
+    /// OSC endpoint used by external tools and AI agents to drive Mixxx.
+    std::shared_ptr<OscServer> m_pOscServer;
 
     std::shared_ptr<VinylControlManager> m_pVCManager;
 

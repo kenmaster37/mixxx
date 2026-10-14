@@ -43,6 +43,7 @@ Item {
     readonly property string preferencesDefaultShortcut: Qt.platform.os === "osx" ? "Ctrl+," : "Ctrl+P"
     property int shortcutRevision: 0
     property alias viewFullScreen: viewFullScreenAction
+    property alias viewAudioSetup: viewAudioSetupAction
     property alias viewMaximizeLibrary: viewMaximizeLibraryAction
     property alias viewShowAutoDJ: viewShowAutoDJAction
     property alias viewShowCoverArt: viewShowCoverArtAction
@@ -227,6 +228,16 @@ Item {
         text: qsTranslate("WMainMenuBar", "Show Auto DJ")
 
         onTriggered: Mixxx.Library.showAutoDJ()
+    }
+    Action {
+        id: viewAudioSetupAction
+
+        // Looks for connected devices again, which is what the assistant does on
+        // its own when it notices that a device was connected.
+        shortcut: root.configuredMenuShortcut("ViewMenu_AudioSetup", "Ctrl+8", root.shortcutRevision)
+        text: qsTranslate("WMainMenuBar", "&Audio Setup Assistant")
+
+        onTriggered: Mixxx.Application.checkAudioDevices()
     }
     Action {
         id: viewFullScreenAction

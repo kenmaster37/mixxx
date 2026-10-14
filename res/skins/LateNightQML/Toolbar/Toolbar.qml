@@ -1,4 +1,4 @@
-pragma ComponentBehavior: Bound
+﻿pragma ComponentBehavior: Bound
 
 import "../LateNightTheme"
 import "../../../qml" as Shared
@@ -558,6 +558,12 @@ Rectangle {
 
         group: "[Skin]"
         key: "show_4effectunits"
+    }
+    Mixxx.ControlProxy {
+        id: showBeatgridControlsControl
+
+        group: "[Skin]"
+        key: "show_beatgrid_controls"
     }
     Mixxx.ControlProxy {
         id: showSuperKnobsControl
@@ -1193,6 +1199,10 @@ Rectangle {
                 visible: root.activeAppMenuSection === "View"
             }
             ToolbarAppMenuAction {
+                action: root.applicationMenuActions.viewAudioSetup
+                visible: root.activeAppMenuSection === "View"
+            }
+            ToolbarAppMenuAction {
                 id: vinylControlMenuAction
 
                 hasSubmenu: true
@@ -1629,8 +1639,13 @@ Rectangle {
             control: showWaveformsControl
 
             ToolbarMenuToggle {
-                control: hotcueTimingShiftControl
+                control: showBeatgridControlsControl
                 enabled: showWaveformsControl.value > 0
+                text: "Beatgrid Buttons"
+            }
+            ToolbarMenuToggle {
+                control: hotcueTimingShiftControl
+                enabled: showBeatgridControlsControl.value > 0
                 text: "Hotcue Shift Buttons"
             }
             ToolbarMenuToggle {

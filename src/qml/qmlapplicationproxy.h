@@ -83,6 +83,29 @@ class QmlApplicationProxy : public QObject {
     static void registerReloadCallback(std::function<void()> reloadCallback) {
         s_reloadCallback = std::move(reloadCallback);
     }
+    static void registerSetFullScreenCallback(std::function<void(bool)> callback) {
+        s_setFullScreenCallback = std::move(callback);
+    }
+    static void registerAudioDeviceCheckCallback(std::function<void()> callback) {
+        s_audioDeviceCheckCallback = std::move(callback);
+    }
+    /// Looks for connected audio devices again and offers to use the sound card
+    /// of a controller that has just been connected, see AudioDeviceAssistant.
+    Q_INVOKABLE void checkAudioDevices() const {
+        if (s_audioDeviceCheckCallback) {
+            s_audioDeviceCheckCallback();
+        }
+    }
+    /// Applies the fullscreen state to the window owned by the QML application
+    /// engine and returns true. Returns false when no such window exists, so the
+    /// caller can fall back to the QWidget window used by the legacy skins.
+    static bool setWindowFullScreen(bool fullScreen) {
+        if (!s_setFullScreenCallback) {
+            return false;
+        }
+        s_setFullScreenCallback(fullScreen);
+        return true;
+    }
 
   signals:
     void applicationMenuRequested();
@@ -98,6 +121,8 @@ class QmlApplicationProxy : public QObject {
     static inline std::shared_ptr<KeyboardEventFilter> s_pKeyboardEventFilter;
     static inline VinylControlManager* s_pVinylControlManager{nullptr};
     static inline std::function<void()> s_reloadCallback;
+    static inline std::function<void(bool)> s_setFullScreenCallback;
+    static inline std::function<void()> s_audioDeviceCheckCallback;
 };
 
 } // namespace qml
