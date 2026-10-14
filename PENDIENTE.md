@@ -7,7 +7,7 @@ Documento de continuidad. Todo lo aquí escrito está **verificado**, no es supo
 ## 1. Estado actual (funcionando)
 
 | Elemento | Estado |
-|---|---|
+| --- | --- |
 | App instalada en `C:\Program Files\Mixxx` | ✅ Arranca |
 | Skin QML `NeonDeck` | ✅ Carga **sin** `--developer` y con todos sus SVG |
 | Servidor OSC | ✅ Activo, confirmado por log |
@@ -42,6 +42,7 @@ PlaylistTableModel::selectPlaylist → AutoDJProcessor::AutoDJProcessor →
 AutoDJFeature::AutoDJFeature → make_parented → Library::Library → CoreServices::initialize`
 
 **Reglas para que no vuelva a pasar:**
+
 - **Nunca interrumpir una compilación.**
 - Si tras cambiar un **header** aparecen crashes raros o que se mueven de sitio:
   hacer **recompilación limpia** antes de investigar código.
@@ -68,8 +69,9 @@ que garantizar que exista la carpeta de assets correspondiente.
 ## 3. Cambios ya hechos (para no repetirlos)
 
 ### C++ (modificados)
+
 | Fichero | Qué se hizo |
-|---|---|
+| --- | --- |
 | `src/main.cpp` | Carga skins QML **sin** `--developer` (se quitó la condición `args.getDeveloper()`) |
 | `src/skin/skinloader.cpp` | `skinFromDirectory()` descubre `QmlSkin` como cualquier skin; `getDefaultSkinName()` devuelve `"NeonDeck"`; `isDeveloperOnlyQmlSkin()` ahora devuelve `false` (quedó vestigial) |
 | `src/coreservices.cpp/.h` | Crea y arranca `OscServer` (miembro `m_pOscServer` **insertado en medio** de la clase) |
@@ -83,6 +85,7 @@ que garantizar que exista la carpeta de assets correspondiente.
 | `CMakeLists.txt` | Registra las fuentes nuevas (11 inserciones) |
 
 ### C++ (nuevos)
+
 - `src/ai/aimixplanner.{h,cpp}` — cliente compatible OpenAI/DeepSeek
 - `src/controllers/osc/oscserver.{h,cpp}` — servidor OSC
 - `src/library/autodj/harmonicmixing.{h,cpp}`
@@ -91,6 +94,7 @@ que garantizar que exista la carpeta de assets correspondiente.
 - `src/test/aimixplanner_test.cpp`, `harmonicmixing_test.cpp`, `neondeckskin_test.cpp`
 
 ### Recursos
+
 - `res/skins/NeonDeck/` (101 ficheros) — skin QML basado en LateNightQML
 - `res/skins/NeonDeck/LateNightTheme/LateNightTheme.qml` — mapeo de assets (sección 2.2)
 - `res/skins/NeonDeck/Samplers/SamplerPadGrid.qml` — **nuevo**: rejilla de pads (5.3)
@@ -107,9 +111,11 @@ que garantizar que exista la carpeta de assets correspondiente.
 ## 4. Cómo compilar y verificar
 
 ### Compilar (Windows → .msi)
-```
+
+```text
 c:\Users\giova\Desktop\mixxx\mixxx\build_windows_release.cmd
 ```
+
 Hace todo: localiza MSVC con `vswhere`, `vcvars64`, usa CMake+Ninja de VS,
 configura `build\x64__legacy`, compila y empaqueta con `cpack -G WIX`.
 Tarda del orden de 10–20 min. **No interrumpir** (ver sección 2.1).
@@ -120,14 +126,19 @@ Las dependencias (1.19 GB) ya están en caché en
 Salida: `build\x64__legacy\mixxx-2.7-alpha-427-g0fffd3d0d0-modified-amd64.msi`
 
 ### Ver cambios de skin/QML SIN compilar
+
 El skin y el QML son **datos**, no código. Para iterar el aspecto:
-```
+
+```powershell
 "C:\Program Files\Mixxx\mixxx.exe" --resource-path "c:\Users\giova\Desktop\mixxx\mixxx\res"
 ```
+
 (`--developer` sólo hace falta con binarios anteriores al cambio de `main.cpp`.)
 
 ### Capturar la ventana para verificar
+
 En PowerShell:
+
 ```powershell
 Add-Type -AssemblyName System.Drawing
 Add-Type @"
@@ -148,17 +159,21 @@ $g = [System.Drawing.Graphics]::FromImage($bmp)
 $hdc = $g.GetHdc(); [WinCap]::PrintWindow($h, $hdc, 2) | Out-Null; $g.ReleaseHdc($hdc)
 $bmp.Save("C:\Users\giova\Desktop\mixxx\shot.png", [System.Drawing.Imaging.ImageFormat]::Png)
 ```
+
 `PrintWindow` con flag `2` (PW_RENDERFULLCONTENT) captura **sólo** esa ventana.
 
 ### Depurar un crash
+
 - Volcados WER: `%LOCALAPPDATA%\CrashDumps\`
 - Depurador: `C:\Program Files\WindowsApps\Microsoft.WinDbg_1.2610.1001.0_x64__8wekyb3d8bbwe\amd64\cdb.exe`
 - Símbolos: `C:\Program Files\Mixxx\mixxx.pdb`
-```
+
+```powershell
 cdb.exe -z <dump> -y "srv*C:\symbols*https://msdl.microsoft.com/download/symbols;C:\Program Files\Mixxx" -c "!analyze -v; q"
 ```
 
 ### Trampas del entorno (ya me costaron tiempo)
+
 - **PowerShell 5.1 `Remove-Item -Recurse -Force` sobre una junction borra el CONTENIDO DEL DESTINO.** Esto llegó a vaciar `C:\Program Files\Mixxx`. Usar `cmd /c rmdir "<junction>"`.
 - `Start-Process -ArgumentList '--developer'` **descarta el argumento en silencio**. Pasar array: `@('--developer','--resource-path','"ruta con espacios"')`.
 - `QT_USE_QSTRINGBUILDER` está activo: encadenar `"a" + b + "c"` da un *proxy*, que no convierte a `QJsonValue`. Asignar antes a `QString`.
@@ -191,6 +206,7 @@ es *estilo*, no arte copiado. (El usuario pidió explícitamente "que se vea mej
 VirtualDJ"; el objetivo de referencia es esa consola.)
 
 ### LÍMITE LEGAL (no negociable)
+
 - ✅ Iconos **originales** inspirados en el estilo, en calidad profesional.
 - ✅ Recursos con licencia abierta (MIT / CC0 / SIL OFL): Lucide, Tabler, Phosphor,
   fuentes Inter / Barlow Condensed / Archivo / **Rajdhani (usada)**.
@@ -198,14 +214,18 @@ VirtualDJ"; el objetivo de referencia es esa consola.)
   su logotipo. Es su expresión protegida.
 
 ### 5.1 Color por deck (A cian / B rosa) + waveforms a juego
+
 **Lo más reconocible del estilo.**
 
 Medido: el skin **no tiene concepto de color por deck**. Toda la paleta depende de un
 **único** `accentColor` global, en `LateNightTheme.qml:8`:
+
 ```qml
 readonly property color accentColor: ColorScheme.accentColor
 ```
+
 Hacerlo requiere:
+
 1. Añadir `deckAColor` / `deckBColor` al tema (`res/skins/NeonDeck/LateNightTheme/LateNightTheme.qml`).
 2. Cablearlos en los componentes del deck (`res/skins/NeonDeck/Deck/*.qml`), faders y platos.
 3. **Color del waveform:** ⚠️ probablemente **no** es sólo QML — el color lo determina
@@ -216,6 +236,7 @@ Hacerlo requiere:
 de la señal **sí** es QML en este skin (`highColor/lowColor/midColor` de
 `Waveforms/LateNightWaveformDisplay.qml` y `Deck/OverviewRow.qml`), no hace falta compilar.
 Cómo quedó:
+
 - Tema: `deckAColor: "#00e5ff"` (cian, canales impares) y `deckBColor: "#ff2d55"`
   (rojo, pares — se cambió de rosa a rojo para parecerse a VirtualDJ), más `usePerDeckColors` (`ColorScheme.name === "neondeck"`) y las
   funciones `deckNumberForGroup`, `deckColorForGroup` y `waveformSignalColorForGroup`.
@@ -227,10 +248,12 @@ Cómo quedó:
   `MixerChannel4Deck.qml` (`valueLineColor` del fader de volumen).
 
 ### 5.2 Anillos de color en los platos
+
 **HECHO.** En `Deck/SpinnyCoverSlot.qml`: un `Rectangle` redondo con `border.width: 2`
 y el color del deck, visible sólo con `usePerDeckColors`.
 
 ### 5.3 Rejilla de pads a la derecha del navegador
+
 **HECHO.** Nuevo componente `Samplers/SamplerPadGrid.qml`: rejilla de 2 columnas
 (4 u 8 pads según `[App] num_samplers`, con cabecera "Samplers") usando `SamplerMini`.
 `SamplerMini` se rehizo como **pad**: glifo grande centrado (con relleno en color activo),
@@ -243,6 +266,7 @@ ancla con `anchors.right: samplersSection.left`. Ojo con el álgebra del panel:
 ocupa toda la altura de la biblioteca, no una banda).
 
 ### 5.4 FX en los bordes exteriores
+
 **HECHO (versión banda).** En `Effects/EffectsRack.qml` cada unidad tiene ahora un
 ancho acotado y se pega a los bordes:
 `unitWidth: Math.min(420, Math.round(root.width * 0.32))`, `leftUnitEnd: unitWidth`,
@@ -253,9 +277,11 @@ horizontal ancha; pasarlo a columna vertical exige rehacer sus internos (los par
 usan `x`/`width` absolutos, no un layout).
 
 ### 5.5 Tipografía
+
 **HECHO.** Decisión del usuario: **Rajdhani** (SIL OFL), no Barlow y **no** la fuente
 "Virtual DJ" de DaFont (`Vdj.ttf`): es de mapa de bits a 8 px y no trae licencia formal
 de redistribución, así que no se puede incluir en el paquete.
+
 - Ficheros en `res/fonts/`: `Rajdhani-Light/Regular/Medium/SemiBold/Bold.ttf` +
   `Rajdhani.LICENSE.txt` (los `.txt` los ignora `FontUtils::initializeFonts`).
   Bajados de `raw.githubusercontent.com/google/fonts/main/ofl/rajdhani/` (familia única
@@ -276,7 +302,8 @@ de redistribución, así que no se puede incluir en el paquete.
   `m_pCoreServices->initialize(app)`. **Requiere compilar.**
 
 ### 5.6 Iconos con Font Awesome (en curso)
-**Decisión del usuario:** usar los iconos de https://fontawesome.com en vez de
+
+**Decisión del usuario:** usar los iconos de <https://fontawesome.com> en vez de
 dibujarlos a mano.
 
 **Licencia (importante):** sólo vale **Font Awesome Free** — fuentes bajo SIL OFL 1.1,
@@ -285,6 +312,7 @@ atribución**. Font Awesome Pro es de pago y **no** se puede usar.
 Atribución incluida en `res/fonts/FontAwesomeFree.LICENSE.txt`.
 
 Cómo quedó montado:
+
 - `res/fonts/FontAwesomeFree-Solid.ttf` (fa-solid-900, v6.7.2). Registra la familia
   **"Font Awesome 6 Free"**; el tema la expone como `LateNightTheme.iconFontFamily`.
 - `LateNightTheme.iconGlyphs` es un mapa nombre→glifo con nombres idénticos a los de la
@@ -311,6 +339,7 @@ Se convirtieron además a **texto** lo que en VirtualDJ es texto: `CUE`, `IN`, `
 (usando la propiedad `label` de `LateNightIconButton`).
 
 Detalles de tamaño (petición del usuario: "buen tamaño, que no sobresalgan"):
+
 - `LateNightIconButton` ajusta el glifo a **0,72 × min(ancho, alto) disponibles**
   cuando `iconSize` es 0, dejando margen respecto al bisel.
 - `EqKillButton` usa `iconSize: 13`; los pads de sampler, glifos grandes centrados.
@@ -328,8 +357,10 @@ instalar; el `.msi` no la lleva hasta entonces.
 ---
 
 ### 5.7 Tema oscuro en menús y diálogos
+
 **HECHO (2026-10-13, 00:35).** En modo QML los menús y diálogos son **widgets nativos de
 Qt**: no siguen al skin.
+
 - ⚠️ Un **stylesheet global desde `QmlApplication` rompe el arranque QML** (comprobado
   dos veces). No reintentar por ahí.
 - Lo que **sí** funciona: en `QmlApplication` (ruta de skins QML) poner
@@ -355,6 +386,7 @@ navegador, BPM gigante en color de deck, `CUE`/`IN`/`OUT` como texto, EQ kill ti
 "ban" y pads cuadrados con glifo + nombre.
 
 **Etapas propuestas, de más a menos impacto:**
+
 1. **Columnas PADS/FX a los lados de cada deck** (lo que da la silueta VDJ). Requiere:
    sacar el rack de FX de la banda inferior y ponerlo como columna en los bordes de la
    fila de decks; los decks se estrechan. ⚠️ `EffectUnit` está diseñado como banda
@@ -401,6 +433,7 @@ Contiene: `Mixxx.png` (3,6 MB, la imagen de fondo), `Logo.png`, `Brianne_s_hand.
 → **no se puede empaquetar** (y menos en un árbol GPL).
 
 **Verificado que no carga:**
+
 1. El cargador legacy busca el manifiesto como `skin.xml`
    (`kSkinManifestFileName` en `legacyskin.cpp`) y nombra el skin con el **nombre de la
    carpeta**, así que hay que copiarla y renombrar el XML.
@@ -422,6 +455,7 @@ pads debajo, con el panel central (mixer) centrado. Para el look de la captura, 
 NeonDeck ya está más cerca.
 
 **Lo que sí aporta** (referencia de proporciones, medidas reales a 4K):
+
 - browser = 38 % inferior de la ventana; fila de decks ≈ 40 %; panel central centrado
   (`<pannel id="Audio">` x 1500–2341 de 3840).
 - jog (`<scratch>`) de 286 px = 7,4 % del ancho; waveform a su lado.
@@ -488,12 +522,14 @@ conviven.
   viniendo del tema, así que cualquier skin que herede el panel lo respeta.
 
 **Config usada para probarlo** (`%LOCALAPPDATA%\Mixxx\mixxx.cfg`, formato `clave valor`):
-```
+
+```text
 ResizableSkin PulseDeck
 Scheme NeonDeck
 show_stem_controls 0        # estaba en 1: los paneles de stems tapaban la onda
 show_beatgrid_controls 0    # la columna de beatgrid ocupaba 120 px de la banda
 ```
+
 Con los dos `show_*` en 0 la banda muestra **dos ondas a todo el ancho** (una por deck,
 apiladas) como en la captura. Se pueden volver a activar desde la barra (menú Waveforms).
 
@@ -502,6 +538,7 @@ dentro del jog con anillo azul, pads 1/2/3 encendidos con el color del hotcue, B
 letra del deck en color, deck B espejado. `NeonDeck` sin tocar.
 
 **Pendiente de este skin:**
+
 1. ~~Los FX dentro de la columna del deck~~ — **HECHO (2026-10-12 23:40).**
    Nuevo `Deck\FxColumn.qml`: las **3 filas de la unidad a la que está ruteado el deck**,
    en modo compacto (`EffectSlot` con `expanded: false`), que es
@@ -536,6 +573,7 @@ letra del deck en color, deck B espejado. `NeonDeck` sin tocar.
 
 **Scripts de verificación de esta sesión** (en
 `c:\Users\giova\.copilot\session-state\e7306c0d-...\files\`):
+
 - `shot.ps1` — captura con `PrintWindow`. **Ojo:** hay una ventana-tool de 160×28 con el
   mismo título, así que filtra por área > 200000 y reintenta; antes hace
   `ShowWindow(h, 9)` + `SetWindowPos(h, 0,0,1360,730)`.
@@ -589,7 +627,7 @@ samples de demo.
 
 Aviso heredado que sale en el log al arrancar (no lo rompe nada, no es de este cambio):
 
-```
+```text
 QmlControlProxy: Requested CO "[Channel1]" , "beatloop_size_halve" does not exist, resetting...
 QmlControlProxy: Requested CO "[Skin]" , "timing_shift_buttons" does not exist, resetting...
 ```
@@ -660,6 +698,7 @@ El estilo de la biblioteca embebida en un skin QML **no es C++**: `QmlLegacyLibr
 LateNight en modo palemoon), y antepone `res\skins\default.qss`.
 
 Cambios hechos en `res\skins\LateNight\style_palemoon.qss`:
+
 - Fondo de la biblioteca `#0f0f0f` → **`#111111`** (el del navegador de VDJ),
   rayado alterno `#0a0a0a` → `#0d0d0d`.
 - Selección: el teal `#2c454f` → **`#1d3b4d`** (azul tenue a juego con el acento del deck),
@@ -668,6 +707,7 @@ Cambios hechos en `res\skins\LateNight\style_palemoon.qss`:
 Verificado en `shots\browser-01.png` (fondo más oscuro y fila seleccionada azulada).
 
 **Datos útiles para seguir afinando el navegador:**
+
 - Altura de fila: es **preferencia**, no skin: `[Library] RowHeight` (por defecto 20,
   `Library::kDefaultRowHeightPx` en `src\library\library.cpp:60`), editable en
   *Preferences → Library → Row height*, y expuesta al QML como
@@ -739,7 +779,9 @@ antiguo seguirá viéndose "como NeonDeck/PaleMoon" aunque tenga las fuentes.
 ## 6. PENDIENTE — Otros
 
 ### 6.1 Convertir la lectura de la API key a asíncrona
+
 **HECHO.** `AiMixPlanner::requestSetList()` ya no usa la lectura bloqueante:
+
 - Nueva `AiMixPlanner::readApiKeyAsync(providerId, onLoaded)` (usa `ReadPasswordJob`
   con `setAutoDelete(true)`, igual que `DlgPrefAi`).
 - `sendRequest(settings, instruction, candidateTracks, apiKey)` es el antiguo tramo de
@@ -752,6 +794,7 @@ antiguo seguirá viéndose "como NeonDeck/PaleMoon" aunque tenga las fuentes.
 ### 6.2 Limpieza
 
 **HECHO** salvo lo indicado:
+
 - ✅ Borrado `build\x64__legacy_stale\` (4,17 GB) con `cmd /c rmdir /s /q`.
 - ✅ Borrado `%LOCALAPPDATA%\Mixxx\skins\ProDeck\` (109 ficheros huérfanos) con
   `cmd /c rmdir /s /q`.
@@ -765,8 +808,10 @@ antiguo seguirá viéndose "como NeonDeck/PaleMoon" aunque tenga las fuentes.
   `RESOURCE_FOLDER "/skins/NeonDeck"`.
 
 ### 6.3 Rehacer el `.deb` de Linux
+
 **HECHO (2026-10-13, 00:59)** junto con el `.msi` final. Los dos paquetes están en
 **`c:\Users\giova\Desktop\mixxx\dist\`**:
+
 - `mixxx-2.7-alpha-427-g0fffd3d0d0-modified-amd64.msi` (114 MB) — instalado y verificado.
 - `mixxx-2.7.0-alpha-unknown-x86_64.deb` (27,5 MB) — Ubuntu 24.04 amd64;
   `apt-get install -s` resuelve todas las dependencias.
@@ -774,6 +819,7 @@ antiguo seguirá viéndose "como NeonDeck/PaleMoon" aunque tenga las fuentes.
 Cómo se hizo (build **incremental**, unos minutos en vez de una hora):
 script `wsl_rebuild_deb.sh` de esta sesión
 (`c:\Users\giova\.copilot\session-state\e7306c0d-...\files\`), que:
+
 1. sincroniza con `rsync -a --delete` el árbol de Windows a `/home/mixxx/mixxx/`
    **excluyendo** `/build/`, `/buildenv/` (MSVC) y `.git` → el `build/` de Linux en WSL se
    conserva;
@@ -825,12 +871,15 @@ propio comentario de CMake. `FontUtils::initializeFonts` las carga desde
 no cambia.
 
 ### 6.4 Falta música para poder probar nada
+
 **RESUELTO en parte:** la biblioteca pasó de 1 a **215 pistas** (120 con tonalidad **y**
 bpm analizados, 128 con tonalidad). Ya se puede validar con música real: en la sesión del
 2026-10-12 se cargaron pistas y se comprobó el waveform por deck y la mezcla armónica.
 
 ### 6.5 Validar las funciones que ya están en el binario
+
 Están implementadas y compiladas, pero **sin música no se han podido probar de verdad**:
+
 - AutoDJ armónico (selección por Camelot + ventana de tempo).
 - Planificador de setlist con IA (página *AI Assistant* en preferencias: proveedor +
   API key + instrucción en texto).
@@ -842,7 +891,8 @@ Están implementadas y compiladas, pero **sin música no se han podido probar de
 ### 6.6 Selección armónica del AutoDJ — validada y mejorada (2026-10-12)
 
 El código ya estaba completo (`HarmonicMixing` + `AutoDJCratesDAO::getRandomTrackIdHarmonic`
-+ `AutoDJFeature::getHarmonicSelectionConstraints` + UI en *Preferences → Auto DJ*), pero
+
+- `AutoDJFeature::getHarmonicSelectionConstraints` + UI en *Preferences → Auto DJ*), pero
 **sin validar**. Lo comprobado en esta sesión:
 
 1. **Tests:** `HarmonicMixingTest` 8/8 (pasaban ya) y, tras el cambio de abajo, **12/12**.
@@ -879,7 +929,7 @@ cambia nada y 15 % arregla 2 de los 3 casos que quedaban).
 
 El log decía, en **todos** los arranques:
 
-```
+```text
 KeyboardEventFilter - ".../res/keyboard/es_CL.kbd.cfg" not found, trying en_US.kbd.cfg
 KeyboardEventFilter - ".../res/en_US.kbd.cfg" not found, starting without shortcuts
 ```
@@ -957,7 +1007,7 @@ llama `Numark Mixtrack 2.midi.xml` (`<name>Numark MixTrack (Pro) II</name>`).
 Los CC del Pro original no coinciden con el Pro II:
 
 | Control | MixTrack Pro | MixTrack Pro II |
-|---|---|---|
+| --- | --- | --- |
 | Fader deck 1 (`[Channel1],volume`) | CC `0x08` | CC `0x16` |
 | Fader deck 2 (`[Channel2],volume`) | CC `0x09` | CC `0x07` |
 | Tacto del plato deck 1 (`wheelTouch`) | nota `0x4E` | nota `0x4D` |
@@ -1016,7 +1066,7 @@ el usuario no podía identificarlos.
 **Qué son:** el bloque **DeckSettings** de cada deck, o sea:
 
 | Icono | Control | Para qué sirve |
-|---|---|---|
+| --- | --- | --- |
 | ⚡ rayo | `[ChannelN],slip_enabled` | Slip mode: el deck sigue corriendo por debajo mientras haces loops/cues |
 | 🧲 imán (la "U") | `[ChannelN],quantize` | Cuantiza los cues/loops a la rejilla del beat |
 | ✛ diana | `[ChannelN],beats_translate_curpos` (der. `beats_translate_match_alignment`) | Corrige la rejilla del beat a la posición actual |
@@ -1154,7 +1204,7 @@ arreglos de skin de 6.11, el panel de ajustes del deck de 6.10 y el de pantalla 
 
 **Síntoma:** con el Mixtrack Pro II desconectado, Mixxx arrancaba **sin sonido**. En el log:
 
-```
+```text
 18:16:57.646 Warning [Main] Output sound device clock reference not set! Using "Flujo de red"
 18:16:57.646 Debug [Main] 1 output sound devices opened      <-- solo el dispositivo de red
 ```
@@ -1194,7 +1244,7 @@ el del usuario quedó así: `<SoundManagerConfig .../>`, sin ningún `SoundDevic
 
 Verificado con el Mixtrack desconectado (stderr del proceso):
 
-```
+```text
 warning [Main] Configured output device is not connected, using the default "Altavoces (Realtek(R) Audio)"
 warning [Main] The configured output devices cannot play 44100 Hz Hz, using 48000 Hz Hz
 ```
@@ -1305,7 +1355,7 @@ y `queryDevices()` no vuelve a mirar, así que el controlador nuevo no existe pa
 `ControllerManager`. Se intentó con un `refreshHostDevices()` virtual (`Pm_Terminate` +
 `Pm_Initialize` antes de `queryDevices()`) y **el build se caía al arrancar**:
 
-```
+```text
 INVALID_POINTER_READ_c0000005_mixxx.exe!ControllerManager::updateControllerList
 FAULTING_SOURCE_LINE: src/controllers/controllermanager.cpp (233)
 ```
@@ -1341,7 +1391,7 @@ anteriores no compilaban ese objetivo, no se había visto hasta el `--clean-firs
 
 **Prueba final (21:46, confirmada por el usuario):**
 
-```
+```text
 21:46:40 devices changed QList("Microsoft GS Wavetable Synth")        (mesa quitada)
 21:46:43 using "Altavoces (Realtek(R) Audio)"  48000 Hz              → diálogo de aviso ✓
 21:46:54 devices changed QList(..., "MixTrack Pro II")                (mesa puesta)
@@ -1413,12 +1463,92 @@ fuente de iconos (`iconGlyph`/`iconFontFamily`) ni `Controls/IconLabel.qml`, as�
 igual. Si molesta, la alternativa es añadir el icono con un `Text` y el mapa de glifos a ese
 tema, o dibujar las tres líneas con `Rectangle`s.
 
+### 6.17 El MSI instalaba pero Mixxx no arrancaba: faltaban las DLLs (2026-10-13)
+
+**Síntoma reportado por el usuario:** el MSI se instalaba bien pero "me dio error luego de
+instalar".
+
+**Qué pasaba realmente:** el instalador terminó correctamente (evento `11707 Product: Mixxx --
+Installation completed successfully`, resultado 0) y copió el binario bueno (mismo SHA-256 que
+el compilado, con `AudioDeviceAssistant` dentro ✓), pero al abrirlo:
+
+```text
+exit code -1073741515  =  0xC0000135  =  STATUS_DLL_NOT_FOUND
+```
+
+**Causa raíz:** en la instalación faltaban **las DLLs de verdad**. `C:\Program Files\Mixxx`
+tenía 23 DLLs (runtime de MSVC, `fdk-aac`, `jpeg62` y varios plugins de Qt Quick) y **ninguna**
+de las críticas: `Qt6Core.dll`, `Qt6Gui.dll`, `Qt6Widgets.dll`, `Qt6Qml.dll`, `portaudio.dll`,
+`sqlite3.dll`… no estaban en ninguna parte de la instalación. El MSI roto pesaba **74,3 MB**; el
+correcto pesa **114,5 MB** (la diferencia son las ~85 DLLs del ejecutable).
+
+El motivo está en el log del empaquetado:
+
+```text
+-- Installing app dependencies for mixxx...
+resolve : Neither dumpbin, llvm-objdump nor objdump could be found.
+          Can not take care of dll dependencies.
+   at .../buildenv/.../scripts/buildsystems/msbuild/applocal.ps1:162
+```
+
+vcpkg copia las dependencias caminando el grafo de imports del ejecutable y **necesita
+`dumpbin`** (o `llvm-objdump`/`objdump`). Sin él no copia ninguna, y CPack "instala" igual: el
+MSI sale sin DLLs y el error aparece recién al abrir la app.
+
+**Por qué le faltaba `dumpbin` a mi consola** (esto es lo importante, es una trampa de `cmd`):
+
+```bat
+rem MAL: en una linea compuesta, cmd expande %PATH% ANTES de que vcvars64 corra
+cmd /c "call vcvars64.bat >nul && set "PATH=<cmake>;<ninja>;%PATH%" && cpack -G WIX"
+```
+
+`cmd` expande las variables al **leer** la línea completa, así que `%PATH%` se resuelve con el
+PATH **anterior** a `vcvars64.bat`; el `set` pisa el PATH y **borra** el directorio de las
+herramientas de MSVC (`...\VC\Tools\MSVC\<ver>\bin\HostX64\x64`), que es donde vive `dumpbin.exe`
+y también `cl.exe`. La compilación seguía funcionando porque CMake cachea la ruta absoluta de
+`cl.exe` y mete los `-I`/`-LIB` en `build.ninja`, así que no necesita el PATH; pero el script de
+PowerShell de vcpkg sí lo busca en el PATH y falla.
+
+**Solución (la que quedó):** usar el script del usuario `build_windows_release.cmd`, que llama
+`vcvars64.bat` y hace el `set "PATH=..."` en **líneas separadas** (ahí la expansión ya incluye lo
+que agregó vcvars). Equivalente, y lo que usé para rehacer el paquete:
+
+```bat
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >nul
+set "PATH=<cmake>;<ninja>;%USERPROFILE%\.dotnet\tools;%PATH%"
+set "DOTNET_ROOT=%USERPROFILE%\.dotnet"
+cd /d "<build>"
+rmdir /s /q _CPack_Packages 2>nul
+cpack -G WIX -C RelWithDebInfo
+```
+
+Conviene añadir `where dumpbin || exit /b 1` antes de `cpack` como salvaguarda: si no aparece,
+el MSI saldrá roto.
+
+**Verificación hecha** (sin poder instalar, que necesita UAC): se extrajo el MSI con
+`msiexec /a <msi> /qn TARGETDIR=<temp>` (instalación administrativa, no toca el sistema) y **se
+arrancó ese binario**: `99 DLLs` en la raíz, `Qt6Core/Gui/Widgets/Qml/Quick`, `portaudio`,
+`sqlite3`, `portmidi`, `hidapi` y `libssl-3-x64` presentes ✓, y la app abrió el stream de audio y
+el asistente arrancó (`AudioDeviceAssistant: watching devices`) ✓. Staging de CPack: 85 DLLs
+junto al exe. El MSI nuevo está en `dist\` (13-10 23:17, 114,5 MB).
+
+⚠️ **Antes de instalar el MSI nuevo hay que desinstalar el actual.** CPack genera un
+**ProductCode distinto en cada empaquetado** (el instalado es `{FEE057A4-...}`, el nuevo
+`{0DD482EC-...}`) y, al ser la misma versión (2.7.0), Windows Installer **no** lo trata como
+actualización: quedarían dos entradas de Mixxx registradas sobre la misma carpeta. Desinstalar
+desde *Aplicaciones instaladas* (o `msiexec /x {FEE057A4-0D55-4551-B6FD-0B10AC8FE272}`) y después
+instalar el nuevo.
+
+**Nada de esto afecta al `.deb`**: en Linux las dependencias son del sistema y no interviene
+`dumpbin` (el `.deb` de las 22:20 ya estaba bien).
+
 ---
 
 ## 7. Configuración actual del usuario
 
 `%LOCALAPPDATA%\Mixxx\mixxx.cfg` (formato `clave valor`, **separado por espacio**, no
 `clave=valor`)
+
 - `ResizableSkin PulseDeck` — apunta al skin nuevo (5.10) para poder verlo. Para volver
   al que trae el código por defecto basta con **borrar esa línea** (o poner
   `ResizableSkin NeonDeck`).
@@ -1430,7 +1560,8 @@ tema, o dibujar las tres líneas con `Rectangle`s.
 Copia de seguridad de la config antes de tocarla: `%TEMP%\mixxx.cfg.bak`.
 
 Comprobación de que todo va bien (líneas esperadas en `%LOCALAPPDATA%\Mixxx\mixxx.log`):
-```
+
+```text
 QmlApplication: QML skin loaded via preferences
 OSC: listening on "127.0.0.1" 11119 sending feedback to "127.0.0.1" 11118
 ```

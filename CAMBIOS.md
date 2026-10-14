@@ -20,7 +20,7 @@ personal). Se mantienen separados para poder rehacer el merge sobre `main` cuand
 ## Resumen por área
 
 | Área | Cambio | Dónde |
-|---|---|---|
+| --- | --- | --- |
 | **Skins propias** | `PulseDeck` y `NeonDeck`: skins QML completas (layout tipo VDJ/Serato, color por deck, tipografía Rajdhani, iconos Font Awesome) | `res/skins/PulseDeck/`, `res/skins/NeonDeck/` |
 | **Fuentes** | Rajdhani (SIL OFL) y Font Awesome Free 6.7.2 (SIL OFL / CC BY 4.0 / MIT), con sus licencias | `res/fonts/` |
 | **Carga de skins QML** | Las skins QML se cargan sin `--developer`; `NeonDeck` es la skin por defecto | `src/main.cpp`, `src/skin/skinloader.{h,cpp}` |
@@ -35,7 +35,7 @@ personal). Se mantienen separados para poder rehacer el merge sobre `main` cuand
 | **Atajos de teclado** | El *fallback* de `en_US.kbd.cfg` buscaba la ruta mal: nadie tenía atajos | `src/controllers/keyboard/keyboardeventfilter.cpp` |
 | **Controlador Mixtrack Pro II** | Scripts y mapeados sin controles inexistentes y sin el `abort()` del timer del plato | `res/controllers/Numark Mixtrack Pro.midi.xml`, `Numark-Mixtrack-{2,Pro}-scripts.js` |
 | **Interfaz de los decks** | Pads de hotcue que tapaban los ajustes del deck; botones muertos; botón sándwich ilegible con el menú abierto | `res/skins/*/Deck/*`, `res/skins/*/Toolbar/Toolbar.qml`, `res/qml/Deck/BeatJump.qml` |
-| **Empaquetado** | Empaquetado `.msi` y `.deb`, y alternativa de FFmpeg `-extra` para el `.deb` | `packaging/CPackConfig.cmake`, `packaging/CPackDebFfmpegExtraAlternatives.cmake`, `build_windows_release.cmd` |
+| **Empaquetado** | Empaquetado `.msi` y `.deb`, y alternativa de FFmpeg `-extra` para el `.deb` | `packaging/CPackConfig.cmake`, `packaging/CPackDebFfmpegExtraAlternatives.cmake` |
 
 ## 1. Skins QML propias: `PulseDeck` y `NeonDeck`
 
@@ -193,11 +193,14 @@ Arreglo de una línea; verificado con Ctrl+P.
 
 ## 11. Empaquetado
 
-- `packaging/CPackConfig.cmake` y `build_windows_release.cmd`: build y empaquetado del `.msi` con
-  MSVC + Ninja + WiX (`wix.exe` necesita `DOTNET_ROOT`).
+- `packaging/CPackConfig.cmake`: build y empaquetado del `.msi` (MSVC + Ninja + WiX) y del `.deb`.
+  El `wix.exe` global es un *tool* de .NET y necesita `DOTNET_ROOT` apuntando al SDK.
 - `packaging/CPackDebFfmpegExtraAlternatives.cmake` (nuevo): permite las bibliotecas de FFmpeg
   `-extra` como alternativas en las dependencias del `.deb`.
-- `CMakeSettings.json`: configuración de CMake para Visual Studio.
+
+Los scripts de build locales (`build_windows_release.cmd`, `CMakeSettings.json`) están en el
+`.gitignore` del proyecto, así que **no se incluyen**: cada uno arma su propio comando con los
+datos de la sección 12.
 
 ## 12. Cómo compilar y verificar
 
@@ -217,6 +220,24 @@ cpack -G DEB
 ⚠️ **Nunca interrumpir una compilación** y, tras cambiar un *header* que forma parte de una clase,
 recompilar limpio (`--clean-first`) si aparecen crashes que cambian de sitio: un `.obj` viejo con el
 tamaño antiguo de la clase provoca corrupción de memoria (en `PENDIENTE.md` §2.1 está el caso real).
+
+⚠️ **Al empaquetar el `.msi`, llamar `vcvars64.bat` en una línea aparte.** vcpkg copia las DLLs
+caminando el grafo de imports del ejecutable y necesita `dumpbin` en el `PATH`. Si se encadena todo
+en una sola línea de `cmd` —
+
+```bat
+rem MAL: cmd expande %PATH% antes de que vcvars64 corra, y el set pisa el PATH
+cmd /c "call vcvars64.bat >nul && set "PATH=<cmake>;<ninja>;%PATH%" && cpack -G WIX"
+```
+
+— el `set` escribe el `PATH` **anterior** a vcvars y borra el directorio de herramientas de MSVC
+(donde viven `dumpbin.exe` y `cl.exe`). La compilación no falla (CMake cachea las rutas absolutas de
+`cl.exe` dentro de `build.ninja`), pero el script de vcpkg sí busca `dumpbin` en el `PATH` y avisa
+sólo con un `resolve : Neither dumpbin, llvm-objdump nor objdump could be found`; CPack termina
+igual y **genera un MSI sin ninguna DLL**, que se instala bien y falla al abrir con
+`0xC0000135` (falta una DLL). Síntoma para reconocerlo: el MSI pesa mucho menos de lo normal
+(~74 MB en vez de ~115 MB). Conviene poner `where dumpbin || exit /b 1` antes de `cpack`.
+Detalle completo en `PENDIENTE.md` §6.17.
 
 ## 13. Notas
 
