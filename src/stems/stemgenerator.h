@@ -8,11 +8,18 @@
 #include <memory>
 
 #include "track/trackid.h"
+#include "track/track.h"
+#include "track/trackref.h"
 #include "preferences/usersettings.h"
 #include "stems/stemqueuemodel.h"
 
 #if defined(MIXXX_USE_QML)
 #include <QtQml/qqmlregistration.h>
+
+// Only used as pointers here, so the full headers stay out of this file;
+// stemgenerator.cpp includes them where they are actually needed.
+class QJSEngine;
+class QQmlEngine;
 #endif
 
 namespace mixxx {
@@ -134,6 +141,11 @@ class StemGenerator : public QObject {
     void enqueueTracks(const QList<TrackId>& trackIds, bool regenerate = false);
     /// True when a stem file already exists for this track.
     Q_INVOKABLE bool hasStems(const QString& trackPath) const;
+    /// The library track holding the stems of the given track: the sibling
+    /// ".stem.mp4" when there is one, otherwise the track itself. Loading the
+    /// stem file instead of the plain track is what lets a deck remix the
+    /// track stem by stem without picking the stem file in the library.
+    TrackPointer stemTrackFor(const TrackPointer& pTrack) const;
     /// Stem file that would be used for this track, empty when there is none.
     Q_INVOKABLE QString stemFileFor(const QString& trackPath) const;
     Q_INVOKABLE void cancel();

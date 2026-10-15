@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -31,6 +32,11 @@ from typing import Iterator
 STEM_NAMES = ("Drums", "Bass", "Other", "Vocals")
 STEM_COLORS = ("#fd4a4a", "#ffff00", "#00e8e8", "#ad65ff")
 MANIFEST_VERSION = 1
+
+# Tags worth carrying over to the stem file, so Mixxx shows the same artist and
+# title as for the track the stems were made from.
+TAGGED_KEYS = ("title", "artist", "album", "album_artist", "genre", "date",
+               "comment", "track", "composer")
 
 # Mixxx refuses stem streams that are not stereo.
 _CHANNEL_COUNT = 2
@@ -213,6 +219,35 @@ CODEC_NAMES = {
 }
 
 
+def read_metadata(path: str, ffmpeg: str = "ffmpeg") -> dict[str, str]:
+    """Container tags of ``path``, so a generated stem file keeps them.
+
+    The muxed audio of a stem file is the mix the separator wrote, a plain WAV
+    without tags, so the artist and title have to be taken from the file the
+    user picked.
+    """
+    ffprobe = os.path.join(os.path.dirname(ffmpeg), "ffprobe.exe")
+    if not os.path.isfile(ffprobe):
+        ffprobe = os.path.join(os.path.dirname(ffmpeg), "ffprobe")
+    if not os.path.isfile(ffprobe):
+        ffprobe = shutil.which("ffprobe") or "ffprobe"
+    result = subprocess.run(
+        [ffprobe, "-v", "error", "-show_entries", "format_tags",
+         "-of", "default=noprint_wrappers=1", path],
+        capture_output=True, text=True)
+    if result.returncode != 0:
+        return {}
+    tags: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        key, separator, value = line.partition("=")
+        if not separator:
+            continue
+        key = key.removeprefix("TAG:").strip().lower()
+        if key in TAGGED_KEYS and value:
+            tags[key] = value
+    return tags
+
+
 def write_stem_mp4(
     original: str,
     stems: dict[str, str],
@@ -221,6 +256,7 @@ def write_stem_mp4(
     codec: str = "aac",
     bitrate: str = "256k",
     sample_rate: int = 48000,
+    tags: dict[str, str] | None = None,
 ) -> None:
     """Mux ``original`` plus the four stems into a NI style stem container."""
     missing = [name for name in STEM_NAMES if name not in stems]
@@ -242,6 +278,8 @@ def write_stem_mp4(
     ]
     if codec != "alac":
         arguments += ["-b:a", bitrate]
+    for key, value in (tags or {}).items():
+        arguments += ["-metadata", f"{key}={value}"]
     arguments += [
         # moov before mdat, like the reference NI files.
         "-movflags", "+faststart",
@@ -307,7 +345,8 @@ def main(argv: list[str]) -> int:
             name, _, stem_path = item.partition("=")
             stems[name.capitalize()] = stem_path
         write_stem_mp4(args.original, stems, args.out,
-                       codec=args.codec, bitrate=args.bitrate)
+                       codec=args.codec, bitrate=args.bitrate,
+                       tags=read_metadata(args.original))
         print(f"escrito: {args.out}")
         print(json.dumps(verify(args.out), indent=2))
     else:

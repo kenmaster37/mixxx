@@ -273,24 +273,37 @@ Controls.Panel {
                 Layout.minimumHeight: 60
                 Layout.preferredHeight: 104
 
-                // Big Spinny/Cover Slot (Large mode)
-                SpinnyCoverSlot {
-                    id: leftSpinnyBig
-                    anchors.centerIn: parent
-                    group: root.group
-                    height: root.showBigSpinnyOrCover ? Math.min(LateNightTheme.fullBigSpinnySize, parent.height) : 0
-                    visible: root.showBigSpinnyOrCover
-                    width: height
-                }
+                // The deck settings column hangs from the overview strip on the
+                // right, so the jog is centred in the space left of it and its
+                // ring cannot cover the rating stars or the slip/quantize
+                // buttons.
+                Item {
+                    id: jogArea
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.rightMargin: LateNightTheme.deckSettingsColumnWidth
+                    anchors.top: parent.top
 
-                // Small Spinny/Cover Slot (Small mode)
-                SpinnyCoverSlot {
-                    id: leftSpinnySmall
-                    anchors.centerIn: parent
-                    group: root.group
-                    height: root.showSmallSpinnyOrCover ? Math.min(LateNightTheme.smallSpinnySize, parent.height) : 0
-                    visible: root.showSmallSpinnyOrCover
-                    width: height
+                    // Big Spinny/Cover Slot (Large mode)
+                    SpinnyCoverSlot {
+                        id: leftSpinnyBig
+                        anchors.centerIn: parent
+                        group: root.group
+                        height: root.showBigSpinnyOrCover ? Math.min(LateNightTheme.fullBigSpinnySize, parent.height, parent.width) : 0
+                        visible: root.showBigSpinnyOrCover
+                        width: height
+                    }
+
+                    // Small Spinny/Cover Slot (Small mode)
+                    SpinnyCoverSlot {
+                        id: leftSpinnySmall
+                        anchors.centerIn: parent
+                        group: root.group
+                        height: root.showSmallSpinnyOrCover ? Math.min(LateNightTheme.smallSpinnySize, parent.height, parent.width) : 0
+                        visible: root.showSmallSpinnyOrCover
+                        width: height
+                    }
                 }
             }
 

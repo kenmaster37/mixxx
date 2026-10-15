@@ -200,6 +200,9 @@ def separate(args) -> int:
                 ffmpeg=args.ffmpeg,
                 codec=args.codec,
                 bitrate=args.bitrate,
+                # The master is a plain WAV without tags, so the tags the deck
+                # shows come from the track the user picked.
+                tags=stem_mp4.read_metadata(args.input, args.ffmpeg),
             )
         except Exception as error:  # noqa: BLE001 - reported to the user
             emit("ERROR", f"writing the container failed: {error}")
@@ -241,7 +244,12 @@ def main(argv: list[str]) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "probe":
-        print(json.dumps(probe(args.ffmpeg)))
+        # No trailing newline on purpose: the parent process turns every
+        # complete line into a progress/status message, so printing the report
+        # without one leaves it in the buffer that is parsed when the worker
+        # exits (see StemGenerator::slotWorkerFinished).
+        sys.stdout.write(json.dumps(probe(args.ffmpeg)))
+        sys.stdout.flush()
         return 0
     return separate(args)
 

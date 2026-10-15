@@ -254,6 +254,11 @@ QtObject {
     readonly property int miniDeckHeight: 53
     readonly property int fullBigSpinnySize: 114
     readonly property int compactBigSpinnySize: 110
+    // Width of the deck settings column (rating stars and the slip/quantize/
+    // curpos/eject/repeat/keylock buttons) that OverviewRow keeps on the right
+    // edge of the overview strip. The jog of the Full deck reserves this width
+    // so its ring cannot cover those buttons.
+    readonly property int deckSettingsColumnWidth: 76
     readonly property color compactVuPanelColor: isClassic ? "#161616" : "#111111"
     readonly property color compactVuPanelBorderColor: isClassic ? "#262626" : "#212123"
     readonly property color compactVuPanelBorderBottomColor: isClassic ? "#04080b" : "#010304"

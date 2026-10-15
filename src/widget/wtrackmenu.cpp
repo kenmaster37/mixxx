@@ -1901,6 +1901,19 @@ void WTrackMenu::enqueueStems(bool regenerate) {
         return;
     }
     pStemGenerator->enqueueTracks(trackIds, regenerate);
+
+    // Stem generation runs in the background, so confirm what is queued and
+    // where the progress shows up instead of leaving the user guessing.
+    const int pending = pStemGenerator->pendingCount();
+    if (pending > 0) {
+        QMessageBox::information(this,
+                tr("Stems"),
+                tr("%n track(s) queued for stem generation. The progress is shown next "
+                   "to the STEMS button in the toolbar, and the jobs wait while a deck "
+                   "is playing.",
+                        "",
+                        pending));
+    }
 }
 
 void WTrackMenu::slotLockBpm() {

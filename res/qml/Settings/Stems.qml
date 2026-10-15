@@ -1,4 +1,4 @@
-import QtQuick
+﻿import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Mixxx 1.0 as Mixxx
@@ -29,26 +29,26 @@ Category {
     }
 
     function load() {
-        stemsEnabled = Mixxx.StemGenerator.enabled;
-        writeNextToTrack = Mixxx.StemGenerator.writeNextToTrack;
-        pauseWhilePlaying = Mixxx.StemGenerator.pauseDuringPlayback;
-        pythonPath = Mixxx.StemGenerator.pythonPath;
-        cacheDirectory = Mixxx.StemGenerator.cacheDirectory;
-        codecIndex = Math.max(0, codecs.indexOf(Mixxx.StemGenerator.codec));
-        modelIndex = Math.max(0, models.indexOf(Mixxx.StemGenerator.model));
-        providerIndex = Math.max(0, providers.indexOf(Mixxx.StemGenerator.provider));
-        Mixxx.StemGenerator.probe();
+        stemsEnabled = Mixxx.Core.stemGenerator.enabled;
+        writeNextToTrack = Mixxx.Core.stemGenerator.writeNextToTrack;
+        pauseWhilePlaying = Mixxx.Core.stemGenerator.pauseDuringPlayback;
+        pythonPath = Mixxx.Core.stemGenerator.pythonPath;
+        cacheDirectory = Mixxx.Core.stemGenerator.cacheDirectory;
+        codecIndex = Math.max(0, codecs.indexOf(Mixxx.Core.stemGenerator.codec));
+        modelIndex = Math.max(0, models.indexOf(Mixxx.Core.stemGenerator.model));
+        providerIndex = Math.max(0, providers.indexOf(Mixxx.Core.stemGenerator.provider));
+        Mixxx.Core.stemGenerator.probe();
     }
 
     function save() {
-        Mixxx.StemGenerator.enabled = stemsEnabled;
-        Mixxx.StemGenerator.writeNextToTrack = writeNextToTrack;
-        Mixxx.StemGenerator.pauseDuringPlayback = pauseWhilePlaying;
-        Mixxx.StemGenerator.pythonPath = pythonPath;
-        Mixxx.StemGenerator.cacheDirectory = cacheDirectory;
-        Mixxx.StemGenerator.codec = codecs[codecIndex];
-        Mixxx.StemGenerator.model = models[modelIndex];
-        Mixxx.StemGenerator.provider = providers[providerIndex];
+        Mixxx.Core.stemGenerator.enabled = stemsEnabled;
+        Mixxx.Core.stemGenerator.writeNextToTrack = writeNextToTrack;
+        Mixxx.Core.stemGenerator.pauseDuringPlayback = pauseWhilePlaying;
+        Mixxx.Core.stemGenerator.pythonPath = pythonPath;
+        Mixxx.Core.stemGenerator.cacheDirectory = cacheDirectory;
+        Mixxx.Core.stemGenerator.codec = codecs[codecIndex];
+        Mixxx.Core.stemGenerator.model = models[modelIndex];
+        Mixxx.Core.stemGenerator.provider = providers[providerIndex];
         root.dirty = false;
     }
 
@@ -87,12 +87,12 @@ Category {
         }
         Text {
             Layout.fillWidth: true
-            color: Mixxx.StemGenerator.gpuAvailable ? "#7bd88f" : "#ffb347"
+            color: Mixxx.Core.stemGenerator.gpuAvailable ? "#7bd88f" : "#ffb347"
             text: {
-                if (Mixxx.StemGenerator.probing)
+                if (Mixxx.Core.stemGenerator.probing)
                     return "Checking the environment...";
-                if (Mixxx.StemGenerator.gpuAvailable)
-                    return "GPU detected" + (Mixxx.StemGenerator.gpuName !== "" ? ": " + Mixxx.StemGenerator.gpuName : "") + ". Separation runs on CUDA at roughly 10x real time, about 20 seconds for a four minute track.";
+                if (Mixxx.Core.stemGenerator.gpuAvailable)
+                    return "GPU detected" + (Mixxx.Core.stemGenerator.gpuName !== "" ? ": " + Mixxx.Core.stemGenerator.gpuName : "") + ". Separation runs on CUDA at roughly 10x real time, about 20 seconds for a four minute track.";
                 return "No CUDA capable GPU found, so the separation would run on the CPU: it uses a lot of CPU time and takes much longer, roughly 2.4x real time, that is about 100 seconds for a four minute track (some five times slower than with a GPU). Running it while mixing may cause dropouts, so it is postponed while a deck is playing.";
             }
             wrapMode: Text.WordWrap
@@ -100,15 +100,15 @@ Category {
         Text {
             Layout.fillWidth: true
             color: "#ffb347"
-            text: Mixxx.StemGenerator.probeErrors.length > 0 ? "Setup required:\n" + Mixxx.StemGenerator.probeErrors.join("\n") : ""
-            visible: Mixxx.StemGenerator.probeErrors.length > 0
+            text: Mixxx.Core.stemGenerator.probeErrors.length > 0 ? "Setup required:\n" + Mixxx.Core.stemGenerator.probeErrors.join("\n") : ""
+            visible: Mixxx.Core.stemGenerator.probeErrors.length > 0
             wrapMode: Text.WordWrap
         }
         Text {
             Layout.fillWidth: true
             color: Theme.midGray
             text: "The worker needs a Python interpreter with demucs-onnx and onnxruntime-gpu installed, plus ffmpeg. Example:\n    python -m venv <folder>\\venv\n    <folder>\\venv\\Scripts\\pip install demucs-onnx onnxruntime-gpu\n    <folder>\\venv\\Scripts\\pip install nvidia-cublas nvidia-cuda-runtime nvidia-cuda-nvrtc nvidia-cufft nvidia-nvjitlink nvidia-cudnn-cu13\n    then set that interpreter below."
-            visible: Mixxx.StemGenerator.probeErrors.length > 0
+            visible: Mixxx.Core.stemGenerator.probeErrors.length > 0
             wrapMode: Text.WordWrap
         }
 
@@ -280,7 +280,7 @@ Category {
             }
             Text {
                 color: Theme.midGray
-                text: Mixxx.StemGenerator.queueStatus
+                text: Mixxx.Core.stemGenerator.queueStatus
             }
         }
         ListView {
@@ -289,7 +289,7 @@ Category {
             Layout.fillWidth: true
             Layout.preferredHeight: 200
             clip: true
-            model: Mixxx.StemGenerator.queue
+            model: Mixxx.Core.stemGenerator.queue
             spacing: 2
 
             delegate: Rectangle {
@@ -344,27 +344,27 @@ Category {
             FormButton {
                 text: "Probe setup"
 
-                onClicked: Mixxx.StemGenerator.probe()
+                onClicked: Mixxx.Core.stemGenerator.probe()
             }
             FormButton {
                 text: "Open stem folder"
 
-                onClicked: Mixxx.StemGenerator.openCacheFolder()
+                onClicked: Mixxx.Core.stemGenerator.openCacheFolder()
             }
             FormButton {
                 text: "Rescan library"
 
-                onClicked: Mixxx.StemGenerator.rescanLibrary()
+                onClicked: Mixxx.Core.stemGenerator.rescanLibrary()
             }
             FormButton {
                 text: "Clear finished"
 
-                onClicked: Mixxx.StemGenerator.clearFinished()
+                onClicked: Mixxx.Core.stemGenerator.clearFinished()
             }
             FormButton {
                 text: "Cancel all"
 
-                onClicked: Mixxx.StemGenerator.cancel()
+                onClicked: Mixxx.Core.stemGenerator.cancel()
             }
         }
     }

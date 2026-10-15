@@ -34,6 +34,7 @@
 #include "preferences/dialog/dlgprefinterface.h"
 #include "preferences/dialog/dlgprefmixer.h"
 #include "preferences/dialog/dlgprefosc.h"
+#include "preferences/dialog/dlgprefstems.h"
 #include "preferences/dialog/dlgprefwaveform.h"
 #include "util/cmdlineargs.h"
 #include "waveform/waveformwidgetfactory.h"
@@ -225,6 +226,12 @@ DlgPreferences::DlgPreferences(
                           new QTreeWidgetItem(contentsTreeWidget, QTreeWidgetItem::Type)),
             tr("Auto DJ"),
             "ic_preferences_autodj.svg");
+
+    addPageWidget(PreferencesPage(
+                          new DlgPrefStems(this, m_pConfig),
+                          new QTreeWidgetItem(contentsTreeWidget, QTreeWidgetItem::Type)),
+            tr("Stem Generation"),
+            "ic_preferences_waveforms.svg");
 
 #ifdef __BROADCAST__
     addPageWidget(PreferencesPage(

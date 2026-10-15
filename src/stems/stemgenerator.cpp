@@ -16,8 +16,14 @@
 #include "library/trackcollectionmanager.h"
 #include "mixer/playermanager.h"
 #include "track/track.h"
+#include "track/trackref.h"
 #include "util/cmdlineargs.h"
 #include "util/logger.h"
+
+#if defined(MIXXX_USE_QML)
+#include <QJSEngine>
+#include <QQmlEngine>
+#endif
 
 namespace {
 
@@ -131,7 +137,11 @@ void StemGenerator::setEnabled(bool enabled) {
 }
 
 QString StemGenerator::pythonPath() const {
-    return m_pConfig->getValue(ConfigKey(kSettingsGroup, QStringLiteral("PythonPath")), QString());
+    // Trimmed because hand edited or rewritten settings can carry a trailing
+    // space, which would make the existence check fail.
+    return m_pConfig->getValue(ConfigKey(kSettingsGroup, QStringLiteral("PythonPath")),
+            QString())
+            .trimmed();
 }
 
 void StemGenerator::setPythonPath(const QString& path) {
@@ -144,7 +154,8 @@ void StemGenerator::setPythonPath(const QString& path) {
 
 QString StemGenerator::ffmpegPath() const {
     return m_pConfig->getValue(ConfigKey(kSettingsGroup, QStringLiteral("FfmpegPath")),
-            QStringLiteral("ffmpeg"));
+            QStringLiteral("ffmpeg"))
+            .trimmed();
 }
 
 void StemGenerator::setFfmpegPath(const QString& path) {
@@ -157,7 +168,8 @@ void StemGenerator::setFfmpegPath(const QString& path) {
 
 QString StemGenerator::cacheDirectory() const {
     const QString configured = m_pConfig->getValue(
-            ConfigKey(kSettingsGroup, QStringLiteral("CacheDirectory")), QString());
+            ConfigKey(kSettingsGroup, QStringLiteral("CacheDirectory")), QString())
+                                       .trimmed();
     if (!configured.isEmpty()) {
         return configured;
     }
@@ -188,7 +200,8 @@ void StemGenerator::setWriteNextToTrack(bool writeNextToTrack) {
 
 QString StemGenerator::codec() const {
     return m_pConfig->getValue(ConfigKey(kSettingsGroup, QStringLiteral("Codec")),
-            QStringLiteral("aac"));
+            QStringLiteral("aac"))
+            .trimmed();
 }
 
 void StemGenerator::setCodec(const QString& codec) {
@@ -201,7 +214,8 @@ void StemGenerator::setCodec(const QString& codec) {
 
 QString StemGenerator::model() const {
     return m_pConfig->getValue(ConfigKey(kSettingsGroup, QStringLiteral("Model")),
-            QStringLiteral("htdemucs"));
+            QStringLiteral("htdemucs"))
+            .trimmed();
 }
 
 void StemGenerator::setModel(const QString& model) {
@@ -214,7 +228,8 @@ void StemGenerator::setModel(const QString& model) {
 
 QString StemGenerator::provider() const {
     return m_pConfig->getValue(ConfigKey(kSettingsGroup, QStringLiteral("Provider")),
-            QStringLiteral("auto"));
+            QStringLiteral("auto"))
+            .trimmed();
 }
 
 void StemGenerator::setProvider(const QString& provider) {
@@ -401,6 +416,32 @@ bool StemGenerator::hasStems(const QString& trackPath) const {
     return !stemFileFor(trackPath).isEmpty();
 }
 
+TrackPointer StemGenerator::stemTrackFor(const TrackPointer& pTrack) const {
+    if (!pTrack || !m_pCoreServices) {
+        return pTrack;
+    }
+    const QString location = pTrack->getLocation();
+    if (location.isEmpty() || location.endsWith(kStemFileSuffix)) {
+        return pTrack;
+    }
+    const QString stemFile = stemFileFor(location);
+    if (stemFile.isEmpty()) {
+        return pTrack;
+    }
+    const std::shared_ptr<TrackCollectionManager> pTrackCollectionManager =
+            m_pCoreServices->getTrackCollectionManager();
+    if (!pTrackCollectionManager) {
+        return pTrack;
+    }
+    TrackPointer pStemTrack =
+            pTrackCollectionManager->getOrAddTrack(TrackRef::fromFilePath(stemFile));
+    if (!pStemTrack) {
+        return pTrack;
+    }
+    kLogger.info() << "Playing the stems of" << location << "from" << stemFile;
+    return pStemTrack;
+}
+
 bool StemGenerator::isAnyDeckPlaying() const {
     if (!m_pCoreServices) {
         return false;
@@ -545,6 +586,8 @@ void StemGenerator::startNextJob() {
     m_worker.setProcessEnvironment(environment);
     m_worker.setWorkingDirectory(QFileInfo(script).absolutePath());
     m_queueStatus = QStringLiteral("Generando \"%1\"").arg(job.title);
+    kLogger.info() << "Generating stems for" << job.sourcePath << "->" << job.outputPath
+                   << "with" << python << "provider" << provider();
     emit queueChanged();
     emit busyChanged();
     m_worker.start();
@@ -599,7 +642,8 @@ void StemGenerator::slotWorkerFinished(int exitCode, QProcess::ExitStatus exitSt
         m_detectedProvider.clear();
         const QJsonDocument document = QJsonDocument::fromJson(rest.toUtf8());
         if (!document.isObject()) {
-            m_probeErrors << QStringLiteral("El intérprete no respondió con un informe válido");
+            m_probeErrors << QStringLiteral("El intérprete no respondió con un informe válido: %1")
+                                     .arg(rest.right(200).trimmed());
         } else {
             const QJsonObject report = document.object();
             m_gpuAvailable = report.value(QStringLiteral("has_cuda")).toBool();
@@ -613,6 +657,13 @@ void StemGenerator::slotWorkerFinished(int exitCode, QProcess::ExitStatus exitSt
         if (exitCode != 0 && m_probeErrors.isEmpty()) {
             m_probeErrors << QStringLiteral("La comprobación terminó con código %1").arg(exitCode);
         }
+        if (m_probeErrors.isEmpty() && m_ready) {
+            kLogger.info() << "Stem environment ready, provider" << m_detectedProvider
+                           << "GPU" << m_gpuName;
+        } else {
+            kLogger.warning() << "Stem environment is not ready:" << m_probeErrors
+                              << "interpreter" << resolvedPython();
+        }
         emit probeChanged();
         return;
     }
@@ -625,6 +676,8 @@ void StemGenerator::slotWorkerFinished(int exitCode, QProcess::ExitStatus exitSt
     if (succeeded) {
         m_queue.markFinished(row, m_detectedProvider);
         m_queueStatus = QStringLiteral("Listo: %1").arg(job.title);
+        kLogger.info() << "Stem file written to" << job.outputPath
+                       << "provider" << m_detectedProvider;
         if (m_pCoreServices && job.outputPath.endsWith(kStemFileSuffix) &&
                 QFileInfo(job.outputPath).absolutePath() ==
                         QFileInfo(job.sourcePath).absolutePath()) {
@@ -641,6 +694,8 @@ void StemGenerator::slotWorkerFinished(int exitCode, QProcess::ExitStatus exitSt
         }
         m_queue.markFailed(row, error);
         m_queueStatus = error;
+        kLogger.warning() << "Stem generation failed for" << job.sourcePath << "exit code"
+                          << exitCode << "exit status" << exitStatus << ":" << error;
     }
     emit queueChanged();
     emit busyChanged();
@@ -660,6 +715,8 @@ void StemGenerator::failCurrentJob(const QString& error) {
 // ------------------------------------------------------------------- actions --
 
 void StemGenerator::probe() {
+    kLogger.info() << "Stem settings: enabled" << enabled() << "interpreter" << resolvedPython()
+                   << "ffmpeg" << ffmpegPath() << "cache" << cacheDirectory();
     if (m_worker.state() != QProcess::NotRunning) {
         return;
     }

@@ -432,7 +432,7 @@ Item {
 
         // Settings panel.
         Rectangle {
-            Layout.preferredWidth: 76
+            Layout.preferredWidth: LateNightTheme.deckSettingsColumnWidth
             Layout.fillHeight: true
             color: LateNightTheme.overviewSettingsBackgroundColor
 
