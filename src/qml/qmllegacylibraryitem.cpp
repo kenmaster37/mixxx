@@ -88,7 +88,9 @@ SchemeStyle getActiveSchemeStyle() {
 }
 } // namespace
 
-QmlLegacyLibraryItem::~QmlLegacyLibraryItem() = default;
+QmlLegacyLibraryItem::~QmlLegacyLibraryItem() {
+    KeyboardEventFilter::registerEmbeddedTextInputFocusQuery({});
+}
 
 void QmlLegacyLibraryItem::focusSearch() {
     VERIFY_OR_DEBUG_ASSERT(m_pSearchLineEdit) {
@@ -110,6 +112,15 @@ QmlLegacyLibraryItem::QmlLegacyLibraryItem(QQuickItem* pParent)
     setAcceptHoverEvents(true);
     setFlag(QQuickItem::ItemAcceptsInputMethod, true);
     setActiveFocusOnTab(true);
+
+    // The widget tree of the library is painted offscreen (see
+    // WA_DontShowOnScreen below), so QGuiApplication::focusObject() cannot see
+    // the text inputs inside it. Tell the keyboard filter about the focused one,
+    // otherwise the keys typed in e.g. the AI instruction box would be taken for
+    // keyboard shortcuts and would never reach the text input.
+    KeyboardEventFilter::registerEmbeddedTextInputFocusQuery([this]() {
+        return KeyboardEventFilter::isEditableTextInput(m_pFocusedWidget);
+    });
 
     m_toolTipTimer.setSingleShot(true);
     connect(&m_toolTipTimer,

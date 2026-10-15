@@ -44,7 +44,9 @@ QKeySequence safeKeySequence(const QString& str) {
 
 mixxx::Logger kLogger("KeyboardEventFilter");
 
-bool isEditableTextInput(QObject* object) {
+} // anonymous namespace
+
+bool KeyboardEventFilter::isEditableTextInput(QObject* object) {
     for (QObject* current = object; current; current = current->parent()) {
         if (auto* spinBox = qobject_cast<QAbstractSpinBox*>(current)) {
             return !spinBox->isReadOnly();
@@ -60,7 +62,11 @@ bool isEditableTextInput(QObject* object) {
 
     return false;
 }
-} // anonymous namespace
+
+void KeyboardEventFilter::registerEmbeddedTextInputFocusQuery(
+        std::function<bool()> query) {
+    s_embeddedTextInputFocusQuery = std::move(query);
+}
 
 KeyboardEventFilter::KeyboardEventFilter(UserSettingsPointer pConfig,
         const QLocale& locale,
@@ -107,7 +113,12 @@ bool KeyboardEventFilter::eventFilter(QObject*, QEvent* e) {
     } else if (e->type() == QEvent::KeyPress) {
         QKeyEvent* pKE = static_cast<QKeyEvent*>(e);
 
-        if (isEditableTextInput(QGuiApplication::focusObject())) {
+        // A widget that is painted outside the window hierarchy, e.g. the
+        // library painted into a QML item, is not what
+        // QGuiApplication::focusObject() returns, so its host has to tell us
+        // about it (see registerEmbeddedTextInputFocusQuery()).
+        if (isEditableTextInput(QGuiApplication::focusObject()) ||
+                (s_embeddedTextInputFocusQuery && s_embeddedTextInputFocusQuery())) {
             return false;
         }
 

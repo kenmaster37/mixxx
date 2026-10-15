@@ -32,7 +32,7 @@ personal). Se mantienen separados para poder rehacer el merge sobre `main` cuand
 | **Asistente de audio (estilo VDJ)** | Diálogo al conectar/desconectar un controlador, cambio de salida en caliente y elección recordada | `src/soundio/audiodeviceassistant.{h,cpp}`, `src/util/systemdevices.{h,cpp}` |
 | **Audio: sin mesa** | Si el dispositivo configurado no está conectado, suena el dispositivo por defecto del sistema; en Windows no se cierra la app si la frecuencia no es compatible | `src/soundio/soundmanagerconfig.{h,cpp}`, `soundmanager.{h,cpp}`, `sounddevice*.{h,cpp}`, `portaudioenumerator.{h,cpp}` |
 | **Pantalla completa (Linux)** | La acción de pantalla completa afecta a la ventana que muestra la skin QML | `src/qml/qmlapplication.{h,cpp}`, `src/qml/qmlapplicationproxy.h`, `src/mixxxmainwindow.cpp` |
-| **Atajos de teclado** | El *fallback* de `en_US.kbd.cfg` buscaba la ruta mal: nadie tenía atajos | `src/controllers/keyboard/keyboardeventfilter.cpp` |
+| **Atajos de teclado** | El *fallback* de `en_US.kbd.cfg` buscaba la ruta mal: nadie tenía atajos. Y al quedar activos, escribir en la caja de la IA del AutoDJ disparaba los comandos del deck | `src/controllers/keyboard/keyboardeventfilter.{h,cpp}`, `src/qml/qmllegacylibraryitem.cpp` |
 | **Controlador Mixtrack Pro II** | Scripts y mapeados sin controles inexistentes y sin el `abort()` del timer del plato | `res/controllers/Numark Mixtrack Pro.midi.xml`, `Numark-Mixtrack-{2,Pro}-scripts.js` |
 | **Interfaz de los decks** | Pads de hotcue que tapaban los ajustes del deck; botones muertos; botón sándwich ilegible con el menú abierto | `res/skins/*/Deck/*`, `res/skins/*/Toolbar/Toolbar.qml`, `res/qml/Deck/BeatJump.qml` |
 | **Empaquetado** | Empaquetado `.msi` y `.deb`, y alternativa de FFmpeg `-extra` para el `.deb` | `packaging/CPackConfig.cmake`, `packaging/CPackDebFfmpegExtraAlternatives.cmake` |
@@ -163,6 +163,36 @@ Ahora `QmlApplication` guarda su ventana y `QmlApplicationProxy::setWindowFullSc
 `resourcePath` (que termina en `res/`) en lugar de `resourcePath + "keyboard/"`, así que buscaba
 `res/en_US.kbd.cfg` y terminaba con `starting without shortcuts`: **el usuario no tenía ningún atajo**.
 Arreglo de una línea; verificado con Ctrl+P.
+
+### 8.1 Escribir en el panel AutoDJ disparaba los atajos
+
+Al quedar activos los atajos apareció un efecto secundario: en la caja de instrucciones de la IA
+(panel AutoDJ) **no se podía escribir**, y cada letra movía el crossfader, arrancaba la reproducción
+o disparaba hotcues. Los 26 mapeos de una sola letra de `en_US.kbd.cfg` (`h`/`g` crossfader, `d` play,
+`f` cue, `z`-`v`/`m` hotcues, `q`/`w`/`e`/`u`/`i`/`o` loops, `a`/`s`/`j`/`k` beatjump, `p` cargar
+pista, `t`/`y` PFL, `b`/`n` parámetro, `r` editar, `l` play) chocaban con la escritura.
+
+Causa: el árbol de widgets de la biblioteca se **pinta** dentro de un item de QML
+(`mixxx::qml::QmlLegacyLibraryItem`) y vive **fuera de pantalla** (`WA_DontShowOnScreen`), con los
+clics y las teclas reenviados a mano. El `KeyboardEventFilter` está instalado en toda la aplicación
+(`app->installEventFilter(...)`), así que ve las teclas antes que nadie, y su guarda para no pisar la
+escritura era `isEditableTextInput(QGuiApplication::focusObject())`, que **no puede ver** un widget que
+no está en la jerarquía de ventanas: devuelve la ventana QML. Con la caja enfocada, el filtro seguía
+tratando las letras como atajos y además **se comía la tecla**.
+
+Arreglo, siguiendo el patrón de *callback* que ya usa el proyecto:
+
+- `KeyboardEventFilter::isEditableTextInput()` pasa a ser método estático público.
+- `KeyboardEventFilter::registerEmbeddedTextInputFocusQuery(std::function<bool()>)`: quien pinta
+  widgets fuera de pantalla registra una consulta, y la guarda del filtro pasa a
+  `isEditableTextInput(focusObject()) || (s_embeddedTextInputFocusQuery && s_embeddedTextInputFocusQuery())`.
+- `QmlLegacyLibraryItem` la registra en su constructor (y la limpia en el destructor) devolviendo
+  `isEditableTextInput(m_pFocusedWidget)`, que es el widget que `updateEmbeddedFocus()` asigna en cada
+  clic. Así el estado se lee en vivo y no hay nada que se desincronice.
+
+Con eso, escribir en la caja funciona y los atajos siguen activos al volver el foco a la tabla de
+pistas (un clic en la tabla deja el viewport, que no es un campo de texto). Verificado por el usuario
+en pantalla.
 
 ## 9. Controlador Numark Mixtrack Pro II
 
