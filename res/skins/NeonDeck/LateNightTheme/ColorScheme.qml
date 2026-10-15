@@ -10,10 +10,13 @@ QtObject {
         if (scheme === "classic") {
             return classicScheme;
         }
-        if (scheme === "neondeck") {
-            return neonDeckScheme;
+        if (scheme === "palemoon") {
+            return paleMoonScheme;
         }
-        return paleMoonScheme;
+        // This skin is built around the NeonDeck palette, so it is also the
+        // default when the configuration does not name a scheme, which is the
+        // case on a fresh install.
+        return neonDeckScheme;
     }
 
     readonly property color accentColor: activeScheme.accentColor
