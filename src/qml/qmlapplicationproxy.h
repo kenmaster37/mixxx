@@ -19,6 +19,7 @@ class QmlApplicationProxy : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool keyboardShortcutsEnabled READ keyboardShortcutsEnabled WRITE
                     setKeyboardShortcutsEnabled NOTIFY keyboardShortcutsEnabledChanged)
+    Q_PROPERTY(bool textInputFocused READ textInputFocused NOTIFY textInputFocusedChanged)
     Q_PROPERTY(bool developerMode READ developerMode CONSTANT)
     Q_PROPERTY(bool experimentStatsEnabled READ experimentStatsEnabled NOTIFY statsModeChanged)
     Q_PROPERTY(bool baseStatsEnabled READ baseStatsEnabled NOTIFY statsModeChanged)
@@ -43,6 +44,17 @@ class QmlApplicationProxy : public QObject {
 
     bool keyboardShortcutsEnabled() const;
     void setKeyboardShortcutsEnabled(bool enabled);
+    /// True while the user is typing in a text input.
+    ///
+    /// The shortcuts of the skins are QML Shortcut objects, which Qt resolves
+    /// before the key reaches the focused item and which do not go through
+    /// KeyboardEventFilter. They have to be disabled while this is true,
+    /// otherwise a key that is also a shortcut is typed into nothing, e.g. the
+    /// Space of "Maximize Library".
+    bool textInputFocused() const;
+    /// Called by the hosts of widgets that are painted outside the window
+    /// hierarchy when the focus of their embedded widgets changes.
+    static void notifyTextInputFocusChanged();
     bool developerMode() const;
     bool experimentStatsEnabled() const;
     bool baseStatsEnabled() const;
@@ -110,6 +122,7 @@ class QmlApplicationProxy : public QObject {
   signals:
     void applicationMenuRequested();
     void keyboardShortcutsEnabledChanged();
+    void textInputFocusedChanged();
     void menuShortcutsChanged();
     void statsModeChanged();
     void debuggerEnabledChanged();
@@ -123,6 +136,8 @@ class QmlApplicationProxy : public QObject {
     static inline std::function<void()> s_reloadCallback;
     static inline std::function<void(bool)> s_setFullScreenCallback;
     static inline std::function<void()> s_audioDeviceCheckCallback;
+    /// Set in the constructor, called by notifyTextInputFocusChanged().
+    static inline std::function<void()> s_textInputFocusChangedCallback;
 };
 
 } // namespace qml

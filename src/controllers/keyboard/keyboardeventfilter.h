@@ -43,6 +43,12 @@ class KeyboardEventFilter : public QObject {
     /// True if the object, or one of its parents, is an editable text input.
     static bool isEditableTextInput(QObject* pObject);
 
+    /// True if the user is typing, either in a real text input or in one hosted
+    /// by a widget that is painted outside the window hierarchy, see
+    /// registerEmbeddedTextInputFocusQuery(). Shortcuts must not be triggered
+    /// while this is true, otherwise the keys would not reach the text input.
+    static bool isTextInputFocused();
+
     /// Widgets that are painted outside the window hierarchy, e.g. the library
     /// painted into a QML item, cannot be seen by
     /// QGuiApplication::focusObject(). Their host registers a query here so the

@@ -63,6 +63,11 @@ bool KeyboardEventFilter::isEditableTextInput(QObject* object) {
     return false;
 }
 
+bool KeyboardEventFilter::isTextInputFocused() {
+    return isEditableTextInput(QGuiApplication::focusObject()) ||
+            (s_embeddedTextInputFocusQuery && s_embeddedTextInputFocusQuery());
+}
+
 void KeyboardEventFilter::registerEmbeddedTextInputFocusQuery(
         std::function<bool()> query) {
     s_embeddedTextInputFocusQuery = std::move(query);
@@ -113,12 +118,7 @@ bool KeyboardEventFilter::eventFilter(QObject*, QEvent* e) {
     } else if (e->type() == QEvent::KeyPress) {
         QKeyEvent* pKE = static_cast<QKeyEvent*>(e);
 
-        // A widget that is painted outside the window hierarchy, e.g. the
-        // library painted into a QML item, is not what
-        // QGuiApplication::focusObject() returns, so its host has to tell us
-        // about it (see registerEmbeddedTextInputFocusQuery()).
-        if (isEditableTextInput(QGuiApplication::focusObject()) ||
-                (s_embeddedTextInputFocusQuery && s_embeddedTextInputFocusQuery())) {
+        if (isTextInputFocused()) {
             return false;
         }
 

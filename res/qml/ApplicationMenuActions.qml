@@ -55,6 +55,15 @@ Item {
     signal focusLibrarySearchRequested
 
     function configuredMenuShortcut(command, defaultShortcut, revision) {
+        // While the user is typing, no shortcut may be armed: Qt resolves them
+        // before the key reaches the focused item, so a key that is also a
+        // shortcut would be swallowed instead of being typed, e.g. the Space of
+        // "Maximize Library". Qt registers the shortcut of the Action as well as
+        // the one of the Shortcut objects of the skins, so it is cleared here,
+        // in the single place where all of them are set.
+        if (Mixxx.Application.textInputFocused) {
+            return "";
+        }
         return Mixxx.Application.menuShortcut(command, defaultShortcut);
     }
 

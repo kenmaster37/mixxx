@@ -41,6 +41,7 @@
 #include "mixer/playermanager.h"
 #include "moc_qmllegacylibraryitem.cpp"
 #include "preferences/constants.h"
+#include "qml/qmlapplicationproxy.h"
 #include "qml/qmlconfigproxy.h"
 #include "qml/qmllibraryproxy.h"
 #include "skin/legacy/skincontext.h"
@@ -1464,6 +1465,11 @@ void QmlLegacyLibraryItem::updateEmbeddedFocus(
         QFocusEvent focusIn(QEvent::FocusIn, reason);
         QApplication::sendEvent(m_pFocusedWidget, &focusIn);
     }
+
+    // The shortcuts of the skin are QML Shortcut objects, which do not go
+    // through the keyboard filter. Tell them whether a text input is focused so
+    // that e.g. the Space of "Maximize Library" is typed instead of toggling it.
+    QmlApplicationProxy::notifyTextInputFocusChanged();
 }
 
 void QmlLegacyLibraryItem::updateWidgetSize() {

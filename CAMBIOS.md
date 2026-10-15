@@ -194,6 +194,29 @@ Con eso, escribir en la caja funciona y los atajos siguen activos al volver el f
 pistas (un clic en la tabla deja el viewport, que no es un campo de texto). Verificado por el usuario
 en pantalla.
 
+### 8.2 La barra espaciadora activaba «BIG LIBRARY» al escribir
+
+Quedó un cabo suelto del apartado anterior: ya se podía escribir, pero **el espacio activaba
+«BIG LIBRARY»**, porque el espacio *es* el atajo de *Maximize Library* (decisión de upstream, está en
+`res/qml/ApplicationMenuActions.qml` y en `res/keyboard/en_US.kbd.cfg`).
+
+El filtro de teclado no era el único camino que había que tapar:
+
+- los `Shortcut` de QML (`Toolbar/ApplicationMenuShortcuts.qml`) los resuelve Qt **antes** de entregar
+  la tecla al item, así que no pasan por `KeyboardEventFilter`;
+- y las `Action` de `ApplicationMenuActions.qml` son de **QtQuick**, que **registra el atajo de la
+  propia Action** por su cuenta (el skin instancia `MainMenuBar`, así que están en un menú). Bloquear
+  sólo el `Shortcut` no bastaba —se probó y seguía activándose—.
+
+Solución, con una única fuente de verdad:
+
+- `KeyboardEventFilter::isTextInputFocused()`, que usa el propio filtro y que se expone a QML como la
+  propiedad `Mixxx.Application.textInputFocused` (con `NOTIFY` desde `focusObjectChanged` y desde un
+  aviso que manda `QmlLegacyLibraryItem` cuando cambia el foco de sus widgets pintados).
+- El bloqueo en `configuredMenuShortcut()`, el único punto donde se definen los 32 atajos del menú:
+  mientras se escribe devuelve `""`, y eso desarma a la vez el atajo de la Action y el `Shortcut` de
+  QML. Al salir el foco de la caja, el binding se reevalúa y los atajos vuelven.
+
 ## 9. Controlador Numark Mixtrack Pro II
 
 - `res/controllers/Numark Mixtrack Pro.midi.xml`: los grupos `[Flanger]` y `[ChannelN],flanger` no
