@@ -302,3 +302,32 @@ Detalle completo en `PENDIENTE.md` §6.17.
   preferencias del usuario (bóveda del sistema vía QtKeychain).
 - **`PENDIENTE.md`** es la bitácora de trabajo: contiene rutas locales, capturas de log y el porqué de
   cada decisión. Sirve de respaldo, no como documentación para terceros.
+
+---
+
+## 12. Generacion de stems (pestana Stems)
+
+Mixxx ya sabia **reproducir** stems, pero no crearlos. Ahora tambien los genera:
+
+- **Worker externo** `res/stems/stems_worker.py` (+ `stem_mp4.py`): separa con
+  `demucs-onnx` (ONNX Runtime, sin PyTorch) y escribe el contenedor Native
+  Instruments: 5 pistas (la mezcla y los cuatro stems) y el manifiesto JSON en
+  `moov/udta/stem`, con los `stco`/`co64` parcheados porque el `moov` crece. El
+  progreso se publica como lineas (`STATUS`, `PROGRESS`, `RESULT`, `DONE`,
+  `ERROR`) y el subcomando `probe` informa del entorno para poder avisar antes de
+  empezar.
+- **Servicio** `src/stems/stemgenerator.{h,cpp}`: cola de un trabajo a la vez,
+  pospuesta mientras hay musica sonando, lanzada con QProcess, con las DLL de
+  CUDA de los wheels de Python anadidas al PATH y salida junto a la pista (por
+  defecto) o en `<config>/stems/<hash>/`. La cola se muestra con
+  `src/stems/stemqueuemodel.{h,cpp}`.
+- **Interfaz**: pestana **Stems** en Preferencias (`res/qml/Settings/Stems.qml`)
+  con el aviso de hardware y la cola con progreso, y entradas
+  *Stems > Generate stems / Regenerate stems* en el menu contextual de la
+  biblioteca (WTrackMenu).
+
+Aviso que muestra la pestana: sin GPU la separacion se hace en CPU, consume mucho
+mas y tarda unas cinco veces mas. Medido en el equipo de desarrollo (pista de
+243 s, `htdemucs` fp32): **22.4 s con RTX 3060 (10.9x tiempo real)** frente a
+**102.4 s en CPU (2.4x)**, con la suma de stems a -30.9 dB del original en ambos
+casos.

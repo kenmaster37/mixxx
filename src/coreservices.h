@@ -21,6 +21,7 @@ class OscServer;
 class VinylControlManager;
 class TrackCollectionManager;
 class Library;
+class StemGenerator;
 class SkinControls;
 class ControlPushButton;
 struct LibraryScanResultSummary;
@@ -89,6 +90,10 @@ class CoreServices : public QObject {
         return m_pTrackCollectionManager;
     }
 
+    std::shared_ptr<StemGenerator> getStemGenerator() const {
+        return m_pStemGenerator;
+    }
+
     std::shared_ptr<SettingsManager> getSettingsManager() const {
         return m_pSettingsManager;
     }
@@ -143,6 +148,7 @@ class CoreServices : public QObject {
 
     std::shared_ptr<DbConnectionPool> m_pDbConnectionPool;
     std::shared_ptr<TrackCollectionManager> m_pTrackCollectionManager;
+    std::shared_ptr<StemGenerator> m_pStemGenerator;
     std::shared_ptr<Library> m_pLibrary;
 
     std::shared_ptr<KeyboardEventFilter> m_pKeyboardEventFilter;

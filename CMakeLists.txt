@@ -1642,6 +1642,8 @@ add_library(
   src/sources/soundsourceproviderregistry.cpp
   src/sources/soundsourceproxy.cpp
   src/sources/soundsourcesndfile.cpp
+  src/stems/stemgenerator.cpp
+  src/stems/stemqueuemodel.cpp
   src/track/albuminfo.cpp
   src/track/beatfactory.cpp
   src/track/beats.cpp
@@ -2624,6 +2626,14 @@ if(NOT ANDROID)
   install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/res/controllers"
     DESTINATION "${MIXXX_INSTALL_DATADIR}"
+  )
+
+  # Stem generation worker (Python, run as a child process)
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/res/stems"
+    DESTINATION "${MIXXX_INSTALL_DATADIR}"
+    FILES_MATCHING
+    PATTERN "*.py"
   )
 
   # Effect presets

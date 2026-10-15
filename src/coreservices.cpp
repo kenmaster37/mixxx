@@ -53,6 +53,7 @@
 #endif
 #include "soundio/soundmanager.h"
 #include "sources/soundsourceproxy.h"
+#include "stems/stemgenerator.h"
 #include "util/clipboard.h"
 #include "util/db/dbconnectionpooled.h"
 #include "util/font.h"
@@ -627,6 +628,10 @@ void CoreServices::initialize(QApplication* pApp) {
             m_pTrackCollectionManager.get(),
             m_pPlayerManager.get(),
             m_pRecordingManager.get());
+
+    m_pStemGenerator = std::make_shared<StemGenerator>(pConfig);
+    m_pStemGenerator->registerDependencies(this);
+    StemGenerator::registerInstance(m_pStemGenerator.get());
 
     OverviewCache* pOverviewCache = OverviewCache::createInstance(pConfig, m_pDbConnectionPool);
     connect(&(m_pTrackCollectionManager->internalCollection()->getTrackDAO()),
