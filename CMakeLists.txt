@@ -2629,12 +2629,15 @@ if(NOT ANDROID)
     DESTINATION "${MIXXX_INSTALL_DATADIR}"
   )
 
-  # Stem generation worker (Python, run as a child process)
+  # Stem generation worker (Python, run as a child process) and the requirements
+  # the user installs with setup_venv.py
   install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/res/stems"
     DESTINATION "${MIXXX_INSTALL_DATADIR}"
     FILES_MATCHING
     PATTERN "*.py"
+    PATTERN "*.txt"
+    PATTERN "__pycache__" EXCLUDE
   )
 
   # Effect presets
