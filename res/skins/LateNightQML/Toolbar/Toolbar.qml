@@ -97,10 +97,13 @@ Rectangle {
     }
 
     function openStemsPopup(button) {
-        closeSettingsPopups();
-        stemsPopup.anchorButton = button;
-        positionPopupForButton(stemsPopup, button);
-        stemsPopup.open();
+        // Goes through the same helper as the settings popups so that a second
+        // click on the button closes the panel again.
+        const wasOpen = stemsPopup.visible && stemsPopup.anchorButton === button;
+        root.openPopupForButton(stemsPopup, button);
+        if (!wasOpen && stemsPopup.visible) {
+            root.refreshStemJobs();
+        }
     }
 
     signal focusLibrarySearchRequested
@@ -1012,6 +1015,11 @@ Rectangle {
 
                     Component.onCompleted: {
                         checked = root.stemGenerator.enabled;
+                    }
+
+                    onPressed: {
+                        wasPopupOpenOnPress = root.stemsPopup.visible &&
+                                root.stemsPopup.anchorButton === stemsButton;
                     }
 
                     // QtQml.Connections ya declara su propia propiedad `enabled`
@@ -2375,6 +2383,10 @@ Rectangle {
         property int buttonWidth: 52
         property bool checked: false
         property string text: ""
+        /// Set by the button while it is the anchor of an open panel, so the
+        /// click that lands on it right after the panel closed by itself does
+        /// not open it again.
+        property bool wasPopupOpenOnPress: false
 
         signal activated
 

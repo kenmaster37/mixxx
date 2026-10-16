@@ -50,6 +50,36 @@ Mixxx ya sabía **reproducir** stems; este fork además los **genera**:
 | --- | --- |
 | ![Preferencias de stems](docs/fork/stems-preferencias.png) | ![Popup de stems](docs/fork/stems-popup.png) |
 
+Desde la biblioteca: se selecciona una pista, *clic derecho → Stems → Generate stems*.
+
+| Menú de la biblioteca | Entrada de generación |
+| --- | --- |
+| ![Menú contextual con Stems](docs/fork/stems-menu.png) | ![Generate stems](docs/fork/stems-generar.png) |
+
+Y el panel de la barra (*STEMS*) muestra el entorno detectado, el interruptor de la función y
+**la cola con el trabajo en curso**:
+
+![Panel de stems con la cola](docs/fork/stems-cola.png)
+
+### El entorno de Python no se instala solo
+
+Mixxx **no** trae Python ni las dependencias de la separación: el worker corre en un entorno
+propio porque ONNX Runtime ocupa cientos de MB y no tiene sentido dentro de una aplicación de
+DJ. Lo que sí está en el repositorio es el worker (`res/stems/stems_worker.py` + `stem_mp4.py`:
+se instalan junto a la aplicación y no hay que tocar nada) y el instalador del entorno:
+
+```bash
+python res/stems/setup_venv.py            # con GPU NVIDIA (CUDA)
+python res/stems/setup_venv.py --cpu      # sin GPU: usa la CPU (unas 4x más lento)
+```
+
+Crea el entorno en la carpeta que Mixxx consulta por defecto
+(`<configuración>/stems/venv`, es decir `%LOCALAPPDATA%\Mixxx\stems\venv` en Windows o
+`~/.mixxx/stems/venv` en Linux) e imprime la ruta del intérprete que hay que pegar en
+*Preferencias → Stem Generation → Intérprete*. Si se deja vacío, Mixxx busca ahí; y si tampoco
+existe, usa el `python` del PATH. **Aparte del intérprete hace falta `ffmpeg`** en el PATH (para
+empaquetar el `.stem.mp4`): el worker lo llama por nombre.
+
 ## 3. Asistente de IA para el AutoDJ
 
 Un asistente que **decide qué pista suena después** usando un servicio compatible con OpenAI

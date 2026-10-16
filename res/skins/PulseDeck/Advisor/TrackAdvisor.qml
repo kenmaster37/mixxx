@@ -81,12 +81,15 @@ Controls.Panel {
             spacing: 6
 
             Controls.IconLabel {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.minimumWidth: 14
                 iconColor: LateNightTheme.samplerColor
                 iconName: "wand-magic-sparkles"
                 iconSize: 11
             }
             Text {
                 color: LateNightTheme.primaryDeckTextColor
+                elide: Text.ElideRight
                 font.bold: true
                 font.family: LateNightTheme.fontFamily
                 font.pixelSize: 12
@@ -94,6 +97,7 @@ Controls.Panel {
             }
             Text {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 color: LateNightTheme.textColorMuted
                 elide: Text.ElideRight
                 font.family: LateNightTheme.fontFamily
@@ -101,6 +105,9 @@ Controls.Panel {
                 text: root.referenceText
             }
             Rectangle {
+                // Pin the button: without a minimum width a squeezed header
+                // drops the reload button instead of the text next to it.
+                Layout.minimumWidth: 20
                 Layout.preferredHeight: 18
                 Layout.preferredWidth: 20
                 color: refreshMouseArea.containsMouse ? LateNightTheme.deckButtonInactiveColor : "transparent"
@@ -110,7 +117,7 @@ Controls.Panel {
                     anchors.centerIn: parent
                     iconColor: LateNightTheme.samplerColor
                     iconName: "arrows-rotate"
-                    iconSize: 11
+                    iconSize: 12
                 }
                 MouseArea {
                     id: refreshMouseArea

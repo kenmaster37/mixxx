@@ -35,6 +35,17 @@ int columnIndexByHeaderName(QHeaderView* pHeader, const QString& name) {
     return -1;
 }
 
+const QString kStemsColumnName = QStringLiteral("stems");
+const QString kCoverArtColumnName = QStringLiteral("coverart");
+const QString kPreviewColumnName = QStringLiteral("preview");
+/// Column the stems marker is placed after, in order of preference.
+const QStringList kStemsColumnAnchors = {kCoverArtColumnName, kPreviewColumnName};
+/// Marks the layout as placed. The value is a version, not a flag: a layout
+/// that went through an older placement rule is placed again once, and the
+/// column stays wherever the user drags it afterwards.
+const QString kStemsColumnPlacementKey = QStringLiteral("stems_column_placed");
+const QString kStemsColumnPlacementVersion = QStringLiteral("2");
+
 } // namespace
 
 HeaderViewState::HeaderViewState(const WTrackTableViewHeader& headers) {
@@ -176,21 +187,33 @@ void HeaderViewState::restoreState(WTrackTableViewHeader* pHeaders) {
                 static_cast<Qt::SortOrder>(m_view_state.sort_order()));
     }
 
-    // The stem marker is placed right after the cover art, where it is easy to
-    // spot. A column the saved layout does not know about ends up at the far
-    // right, so it is moved once per profile and the user can drag it anywhere
-    // afterwards.
+    // The stem marker belongs next to the cover art, where it is easy to spot: a
+    // column the saved layout does not know about lands at the far right. The
+    // placement runs once per placement version, so dragging the column
+    // somewhere else is respected from then on.
     TrackModel* pTrackModel = dynamic_cast<TrackModel*>(pHeaders->model());
     if (pTrackModel &&
-            pTrackModel->getModelSetting(QStringLiteral("stems_column_placed")).isEmpty()) {
-        const int stemsColumn = columnIndexByHeaderName(pHeaders, QStringLiteral("stems"));
-        if (stemsColumn >= 0) {
-            pTrackModel->setModelSetting(QStringLiteral("stems_column_placed"),
-                    QStringLiteral("1"));
-            const int coverColumn = columnIndexByHeaderName(pHeaders, QStringLiteral("coverart"));
-            const int from = pHeaders->visualIndex(stemsColumn);
-            if (coverColumn >= 0 && from >= 0) {
-                pHeaders->moveSection(from, pHeaders->visualIndex(coverColumn) + 1);
+            pTrackModel->getModelSetting(kStemsColumnPlacementKey) !=
+                    kStemsColumnPlacementVersion) {
+        const int stemsColumn = columnIndexByHeaderName(pHeaders, kStemsColumnName);
+        const int from = stemsColumn >= 0 ? pHeaders->visualIndex(stemsColumn) : -1;
+        if (from >= 0) {
+            int to = -1;
+            for (const QString& anchor : kStemsColumnAnchors) {
+                const int anchorColumn = columnIndexByHeaderName(pHeaders, anchor);
+                if (anchorColumn >= 0) {
+                    to = pHeaders->visualIndex(anchorColumn) + 1;
+                    break;
+                }
+            }
+            if (to >= 0) {
+                if (to != from) {
+                    pHeaders->moveSection(from, to);
+                }
+                // Only marked once the column could actually be placed, so a
+                // model without those columns is retried on the next model.
+                pTrackModel->setModelSetting(kStemsColumnPlacementKey,
+                        kStemsColumnPlacementVersion);
             }
         }
     }

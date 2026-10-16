@@ -437,6 +437,83 @@ QtObject {
     readonly property color waveformSecondarySignalColor: isPaleMoon ? "#7bc6c3" : "#09b2ae"
     readonly property color white: "#D9D9D9"
 
+    readonly property string iconFontFamily: "Font Awesome 6 Free"
+
+    // Glyphs of the Font Awesome icons the skin uses, keyed by the Font Awesome
+    // icon name so they are easy to look up on fontawesome.com.
+    readonly property var iconGlyphs: ({
+            "angles-left": "\uf100",
+            "angles-right": "\uf101",
+            "arrow-rotate-left": "\uf0e2",
+            "arrow-rotate-right": "\uf01e",
+            "arrows-rotate": "\uf021",
+            "backward": "\uf04a",
+            "backward-fast": "\uf049",
+            "backward-step": "\uf048",
+            "ban": "\uf05e",
+            "bars": "\uf0c9",
+            "bolt": "\uf0e7",
+            "caret-left": "\uf0d9",
+            "caret-right": "\uf0da",
+            "chevron-down": "\uf078",
+            "chevron-left": "\uf053",
+            "chevron-right": "\uf054",
+            "chevron-up": "\uf077",
+            "circle": "\uf111",
+            "circle-pause": "\uf28b",
+            "circle-play": "\uf144",
+            "clock": "\uf017",
+            "compact-disc": "\uf51f",
+            "compress": "\uf066",
+            "crosshairs": "\uf05b",
+            "eject": "\uf052",
+            "ellipsis": "\uf141",
+            "expand": "\uf065",
+            "eye": "\uf06e",
+            "eye-slash": "\uf070",
+            "forward": "\uf04e",
+            "forward-fast": "\uf050",
+            "forward-step": "\uf051",
+            "gauge": "\uf624",
+            "gear": "\uf013",
+            "headphones": "\uf025",
+            "infinity": "\uf534",
+            "key": "\uf084",
+            "link": "\uf0c1",
+            "list": "\uf03a",
+            "lock": "\uf023",
+            "magnet": "\uf076",
+            "magnifying-glass": "\uf002",
+            "microphone": "\uf130",
+            "minus": "\uf068",
+            "music": "\uf001",
+            "pause": "\uf04c",
+            "play": "\uf04b",
+            "plus": "\u002b",
+            "power-off": "\uf011",
+            "record-vinyl": "\uf8d9",
+            "repeat": "\uf363",
+            "rotate": "\uf2f1",
+            "shuffle": "\uf074",
+            "sliders": "\uf1de",
+            "star": "\uf005",
+            "stop": "\uf04d",
+            "table-columns": "\uf0db",
+            "timeline": "\ue29c",
+            "trash": "\uf1f8",
+            "unlock": "\uf09c",
+            "volume-high": "\uf028",
+            "volume-low": "\uf027",
+            "wand-magic-sparkles": "\ue2ca",
+            "xmark": "\uf00d"
+        })
+    /// Glyph of a Font Awesome icon name. Empty when the name is unknown, so a
+    /// typo shows nothing instead of a stray box.
+    function iconGlyph(iconName) {
+        const glyph = iconGlyphs[iconName];
+        return glyph !== undefined ? glyph : "";
+    }
+
     function lateNightAsset(directory, fileName) {
         return Qt.resolvedUrl("../../LateNight/" + ColorScheme.name + "/" + directory + "/" + fileName);
     }

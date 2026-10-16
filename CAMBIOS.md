@@ -359,3 +359,19 @@ casos.
   al comprobar el entorno).
 - **`wsl_rebuild_deb.sh`** en la raiz del repo: compila y empaqueta el `.deb` dentro de WSL
   reutilizando `/home/mixxx/mixxx/build` y copia el paquete a `dist\`.
+- **Iconos del panel Track Advisor**: la skin experimental (`LateNightQML`) no tenia el mapa de
+  glifos de Font Awesome en su tema, asi que el icono ✨ de la cabecera y el boton ⟳ de recargar
+  **no se dibujaban** (sus `iconName` no resolvian). Se anadio el mapa (64 glifos) y la familia
+  `iconFontFamily` a su tema. Ademas, el boton de recargar tiene ahora ancho minimo fijo en las
+  tres skins, para que una cabecera estrecha no lo comprima hasta hacerlo desaparecer.
+- **Columna Stems de la biblioteca**: quedaba al final porque la colocacion se marcaba como hecha
+  aunque no hubiera podido moverse. Ahora la marca es una **version** (`stems_column_placed = 2`):
+  los perfiles que pasaron por la regla anterior se colocan **una vez mas** y a partir de ahi se
+  respeta donde la arrastre el usuario.
+- **Panel STEMS de la barra**: pulsar el boton con el panel abierto **no lo cerraba** (volvia a
+  abrirlo). Ahora usa el mismo ayudante que los desplegables de ajustes, con la marca
+  `wasPopupOpenOnPress` en el boton para no reabrirlo con el clic que acaba de cerrarlo.
+- **Entorno de Python de los stems**: se anaden `res/stems/requirements.txt` y
+  `res/stems/setup_venv.py`, que crean el entorno en `<config>/stems/venv` (la carpeta que Mixxx
+  consulta por defecto) e instalan ONNX Runtime y el separador. Antes no habia forma de instalarlo
+  desde el repo.

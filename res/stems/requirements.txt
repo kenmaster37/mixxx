@@ -1,0 +1,19 @@
+# Dependencies of the stem worker (res/stems/stems_worker.py).
+#
+# Mixxx does not install these: the worker runs in a Python environment of its
+# own, because the separation needs a runtime (ONNX Runtime, several hundred MB)
+# that has no place in a DJ application. res/stems/setup_venv.py creates that
+# environment in the folder Mixxx looks at by default:
+#
+#   <settings folder>/stems/venv        e.g. %LOCALAPPDATA%\Mixxx\stems\venv
+#                                       or ~/.mixxx/stems/venv
+#
+# Install with:  python res/stems/setup_venv.py
+
+# CUDA build of ONNX Runtime. On a machine without a supported NVIDIA GPU use
+# plain "onnxruntime" instead: the separation then runs on the CPU, roughly
+# 2.4x real time instead of 10x.
+onnxruntime-gpu==1.31.0
+
+# Separator itself (Demucs, htdemucs model, no PyTorch involved).
+demucs-onnx
