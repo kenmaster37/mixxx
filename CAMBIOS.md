@@ -331,3 +331,31 @@ mas y tarda unas cinco veces mas. Medido en el equipo de desarrollo (pista de
 243 s, `htdemucs` fp32): **22.4 s con RTX 3060 (10.9x tiempo real)** frente a
 **102.4 s en CPU (2.4x)**, con la suma de stems a -30.9 dB del original en ambos
 casos.
+---
+
+# 14. Deck de PulseDeck tomado de la skin experimental (15-10)
+
+- **Bug de arranque de las skins** (`Toolbar.qml` en PulseDeck, NeonDeck y LateNightQML): un
+  `function onEnabledChanged()` dentro de un `Connections` choca con la propiedad `enabled` que
+  `Connections` ya declara, y el compilador de QML rechaza el fichero entero ("Duplicate method
+  name"), asi que **la skin no cargaba**. Sustituido por un `Binding` que espeja
+  `stemGenerator.enabled` en el boton de stems.
+- **Controles de tonalidad solapados**: el hueco de `KeyControlsPlaceholder` era elastico
+  (76-111 px) y el `RowLayout` comprimia a sus hijos cuando la fila no cabia. Ahora el hueco es
+  fijo (76 px) en los tres `FullDeck.qml` y en los tres `TransportLoopBeatjumpCompact.qml`, y los
+  controles de vinilo (158 px de ancho fijo) tienen fila propia en PulseDeck o se ocultan
+  mientras no caben en el resto de skins y en las filas compactas.
+- **Deck de PulseDeck** (`res/skins/PulseDeck/Deck/FullDeck.qml`): es la composicion de
+  `LateNightQML` (plato grande con las filas de titulo al lado, transporte debajo, pitch en el
+  borde) manteniendo los adornos de PulseDeck (tira de acento del color del deck, color de deck
+  en BPM y llave, iconos, insignia A/B/C/D) y el espejado de los decks B/D, anadido al deck
+  copiado como `mirrorControls`. `fullDeckHeight` pasa de 230 a 206 px, que es lo que mide.
+- **Boton de sync**: dice **SYNC** en vez de dibujar un glifo (`RatePlaceholder.qml` y
+  `RateCompact.qml`), como VirtualDJ.
+- **Worker de stems**: `StemGenerator::resolvedWorkerScript()` busca ahora tambien junto al
+  ejecutable, en `<app>/../share/mixxx/stems/` y en el directorio de configuracion: Mixxx solo
+  conoce la ruta de recursos si se le pasa `--resource-path`, y sin ella resolvia
+  `stems_worker.py` relativo al directorio actual (de ahi el "No se encuentra .../stems_worker.py"
+  al comprobar el entorno).
+- **`wsl_rebuild_deb.sh`** en la raiz del repo: compila y empaqueta el `.deb` dentro de WSL
+  reutilizando `/home/mixxx/mixxx/build` y copia el paquete a `dist\`.
