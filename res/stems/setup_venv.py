@@ -88,9 +88,13 @@ def main() -> int:
         with open(REQUIREMENTS, encoding="utf-8") as source, \
                 open(requirements, "w", encoding="utf-8") as target:
             for line in source:
-                if line.strip().startswith("onnxruntime-gpu"):
+                stripped = line.strip()
+                if stripped.startswith("onnxruntime-gpu"):
                     target.write("onnxruntime\n")
-                elif line.strip().startswith("onnxruntime"):
+                elif stripped.startswith("onnxruntime"):
+                    continue
+                # The nvidia-* wheels are the CUDA runtime, useless without it.
+                elif stripped.startswith("nvidia-"):
                     continue
                 else:
                     target.write(line)

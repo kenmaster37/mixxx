@@ -13,7 +13,14 @@
 # CUDA build of ONNX Runtime. On a machine without a supported NVIDIA GPU use
 # plain "onnxruntime" instead: the separation then runs on the CPU, roughly
 # 2.4x real time instead of 10x.
-onnxruntime-gpu==1.31.0
+#
+# The [cuda,cudnn] extras are not optional: onnxruntime-gpu declares the CUDA
+# libraries as *extra* dependencies, so installing it bare leaves the CUDA
+# provider unable to load (it looks for cublas64_13.dll, cudnn*.dll, ...).
+# cublas is not part of any of its extras, hence its own line.
+onnxruntime-gpu[cuda,cudnn]==1.31.0
+nvidia-cublas
+nvidia-nvjitlink
 
 # Separator itself (Demucs, htdemucs model, no PyTorch involved).
 demucs-onnx
