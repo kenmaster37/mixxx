@@ -109,6 +109,14 @@ Controls.Panel {
             // Top row: FX assignment and key controls.
             RowLayout {
                 id: topPlaceholderRow
+                // The vinyl controls are 158px of fixed width that cannot
+                // shrink, so they are only shown while this row can hold them
+                // next to the FX assignment and the key controls. A squeezed
+                // RowLayout draws its last children on top of each other, which
+                // is what piled them over the title rows.
+                readonly property bool fitsVinylControls:
+                        root.showVinylControls &&
+                        width >= 158 + fxAssignmentButtons.implicitWidth + 76 + 8
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 Layout.minimumHeight: 20
@@ -117,6 +125,7 @@ Controls.Panel {
                 spacing: 0
 
                 LateNightFxAssignmentButtons {
+                    id: fxAssignmentButtons
                     group: root.group
                     showFourEffectUnits: show4EffectUnitsProxy.value > 0
                 }
@@ -148,7 +157,7 @@ Controls.Panel {
                     Layout.preferredHeight: 20
                     Layout.maximumHeight: 20
                     group: root.group
-                    visible: root.showVinylControls
+                    visible: topPlaceholderRow.fitsVinylControls
                 }
 
                 Item {
@@ -175,9 +184,12 @@ Controls.Panel {
                     Layout.minimumHeight: 20
                     Layout.preferredHeight: 20
                     Layout.maximumHeight: 20
+                    // Fixed width: the block is 76px wide, and the elastic slot
+                    // it used to sit in (76-111) pushed it over the title rows
+                    // of the neighbouring column when the row ran out of room.
                     Layout.minimumWidth: 76
                     Layout.preferredWidth: 76
-                    Layout.maximumWidth: 111
+                    Layout.maximumWidth: 76
                     visible: root.showKeyControls
 
                     KeyControlsPlaceholder {

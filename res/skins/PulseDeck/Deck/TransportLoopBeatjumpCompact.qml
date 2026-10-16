@@ -15,6 +15,13 @@ Item {
     property bool showLoopControls: true
     property bool showVinylControls: true
 
+    // Everything else in this row needs about 360px: the transport group, the
+    // FX assignment and the 76px key controls. The vinyl controls add 158px of
+    // fixed width that cannot shrink, so they are only shown while the row can
+    // hold them: a squeezed RowLayout draws its last children on top of each
+    // other, which is what piled the vinyl and key controls up.
+    readonly property bool vinylControlsFit: showVinylControls && width >= 520
+
     clip: true
     implicitHeight: LateNightTheme.compactDeckTransportHeight
 
@@ -137,7 +144,7 @@ Item {
             // Legacy compact row reserves one pixel before the vinyl group;
             // the controls themselves are contiguous.
             Layout.preferredWidth: 1
-            visible: root.showVinylControls
+            visible: root.vinylControlsFit
         }
         VinylControlsPlaceholder {
             Layout.preferredHeight: 20
@@ -145,13 +152,13 @@ Item {
             Layout.preferredWidth: 158
             Layout.maximumWidth: 158
             group: root.group
-            visible: root.showVinylControls
+            visible: root.vinylControlsFit
         }
         Item {
             Layout.fillWidth: true
             Layout.maximumWidth: 40
             Layout.minimumWidth: 2
-            visible: root.showVinylControls
+            visible: root.vinylControlsFit
         }
         RowLayout {
             Layout.preferredHeight: 20
@@ -172,9 +179,12 @@ Item {
             Layout.minimumHeight: 20
             Layout.preferredHeight: 20
             Layout.maximumHeight: 20
+            // Fixed width: the block is 76px wide, and the elastic slot it used
+            // to sit in (76-111) pushed it over the controls next to it when the
+            // row ran out of room.
             Layout.minimumWidth: 76
             Layout.preferredWidth: 76
-            Layout.maximumWidth: 111
+            Layout.maximumWidth: 76
             visible: root.showKeyControls
 
             KeyControlsPlaceholder {

@@ -11,8 +11,6 @@ Controls.Panel {
 
     property bool editMode: false
     required property string group
-    // Deck B/D place their pad column towards the deck's outer edge, like VirtualDJ.
-    property bool mirrorControls: false
     readonly property bool show8Hotcues: show8HotcuesProxy.value > 0
     readonly property bool showBeatjumpControls: showBeatjumpControlsProxy.value > 0
     readonly property bool showBigSpinnyOrCover: SpinnyCoverState.showBigSpinnyOrCover
@@ -24,12 +22,15 @@ Controls.Panel {
     readonly property bool showRateControls: showRateControlsProxy.value > 0
     readonly property bool showSmallSpinnyOrCover: SpinnyCoverState.showSmallSpinnyOrCover
     readonly property bool showVinylControls: showVinylControlsProxy.value > 0
+    /// Deck B/D mirror their controls towards the outer edge of the deck row,
+    /// like VirtualDJ.
+    property bool mirrorControls: false
 
     signal toggleFocus
 
     color: LateNightTheme.deckPanelColor
     implicitHeight: LateNightTheme.fullDeckHeight
-    implicitWidth: 530
+    implicitWidth: 620
 
 
     Mixxx.ControlProxy {
@@ -94,26 +95,34 @@ Controls.Panel {
 
     RowLayout {
         anchors.fill: parent
-        anchors.bottomMargin: LateNightTheme.deckOuterMargin
         anchors.leftMargin: LateNightTheme.deckOuterMargin
-        anchors.rightMargin: LateNightTheme.deckOuterMargin
         anchors.topMargin: LateNightTheme.deckOuterMargin
+        anchors.rightMargin: LateNightTheme.deckOuterMargin
+        anchors.bottomMargin: LateNightTheme.deckOuterMargin
         spacing: 2
 
+        // Only the deck's own row mirrors, so the pad numbering stays put.
         LayoutMirroring.enabled: root.mirrorControls
 
-        // Left control column: FX assignment, hotcue pads, beatjump and intro/outro
+        // Central main deck column
         ColumnLayout {
-            id: controlColumn
-            Layout.fillHeight: true
-            Layout.maximumWidth: 176
-            Layout.minimumWidth: 176
-            Layout.preferredWidth: 176
-            spacing: 2
+            id: mainDeckColumn
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.alignment: Qt.AlignTop
+            spacing: 1
 
             // Top row: FX assignment and key controls.
             RowLayout {
                 id: topPlaceholderRow
+                // The vinyl controls are 158px of fixed width that cannot
+                // shrink, so they are only shown while this row can hold them
+                // next to the FX assignment and the key controls. A squeezed
+                // RowLayout draws its last children on top of each other, which
+                // is what piled them over the title rows.
+                readonly property bool fitsVinylControls:
+                        root.showVinylControls &&
+                        width >= 158 + fxAssignmentButtons.implicitWidth + 76 + 8
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 Layout.minimumHeight: 20
@@ -122,6 +131,7 @@ Controls.Panel {
                 spacing: 0
 
                 LateNightFxAssignmentButtons {
+                    id: fxAssignmentButtons
                     group: root.group
                     showFourEffectUnits: show4EffectUnitsProxy.value > 0
                 }
@@ -153,7 +163,7 @@ Controls.Panel {
                     Layout.preferredHeight: 20
                     Layout.maximumHeight: 20
                     group: root.group
-                    visible: root.showVinylControls
+                    visible: topPlaceholderRow.fitsVinylControls
                 }
 
                 Item {
@@ -180,9 +190,12 @@ Controls.Panel {
                     Layout.minimumHeight: 20
                     Layout.preferredHeight: 20
                     Layout.maximumHeight: 20
+                    // Fixed width: the block is 76px wide, and the elastic slot
+                    // it used to sit in (76-111) pushed it over the title rows
+                    // of the neighbouring column when the row ran out of room.
                     Layout.minimumWidth: 76
                     Layout.preferredWidth: 76
-                    Layout.maximumWidth: 111
+                    Layout.maximumWidth: 76
                     visible: root.showKeyControls
 
                     KeyControlsPlaceholder {
@@ -192,136 +205,91 @@ Controls.Panel {
                 }
             }
 
-            // Effect section: the three slots of the unit this deck is routed to
-            FxColumn {
-                id: fxColumn
-                Layout.fillWidth: true
-                Layout.maximumHeight: 104
-                Layout.minimumHeight: 104
-                Layout.preferredHeight: 104
-                group: root.group
-            }
-
-            TransportLoopBeatjumpPlaceholders {
-                id: loopColumn
-                Layout.fillWidth: true
-                Layout.maximumHeight: 52
-                Layout.minimumHeight: 52
-                Layout.preferredHeight: 52
-                flowHeight: 52
-                group: root.group
-                show8Hotcues: root.show8Hotcues
-                showBeatjumpControls: root.showBeatjumpControls
-                showHotcues: false
-                showIntroOutroCues: root.showIntroOutroCues
-                showLoopControls: false
-                showTransport: false
-            }
-        }
-
-        // Central column: title rows, overview, jog and transport
-        ColumnLayout {
-            id: mainDeckColumn
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            spacing: 1
-
-            TitleTimeRows {
-                id: titleTimeRows
-                Layout.fillWidth: true
-                Layout.maximumHeight: 46
-                Layout.minimumHeight: 46
-                Layout.preferredHeight: 46
-                group: root.group
-
-                TapHandler {
-                    onDoubleTapped: root.toggleFocus()
-                }
-            }
-
-            // Thin wave overview strip, like the progress bar under the title
-            OverviewRow {
-                id: overviewStrip
-                Layout.fillWidth: true
-                Layout.maximumHeight: 18
-                Layout.minimumHeight: 18
-                Layout.preferredHeight: 18
-                // 18 (strip) + 26 (pad row): start the deck settings block right
-                // below the hotcue pads so they cannot cover its buttons.
-                deckSettingsTopOffset: hotcuePads.visible ? 44 : 18
-                group: root.group
-            }
-
-            // Hotcue pad bank above the jog, like VirtualDJ's pads
-            HotcuePadRow {
-                id: hotcuePads
-                Layout.fillWidth: true
-                Layout.maximumHeight: 26
-                Layout.minimumHeight: 26
-                Layout.preferredHeight: 26
-                group: root.group
-                hotcueCount: root.show8Hotcues ? 8 : 4
-                padColumns: 8
-                visible: root.showHotcues
-            }
-
-            // Middle row: the jog wheel, centred like VirtualDJ's platter
-            Item {
+            // Middle Row: Big Spinny on the left, Title/Overview on the right
+            RowLayout {
                 id: middleDeckRow
-                Layout.fillHeight: true
                 Layout.fillWidth: true
-                Layout.minimumHeight: 60
-                Layout.preferredHeight: 104
+                Layout.fillHeight: false
+                Layout.minimumHeight: 122
+                Layout.preferredHeight: 122
+                Layout.maximumHeight: 122
+                spacing: 8
 
-                // The deck settings column hangs from the overview strip on the
-                // right, so the jog is centred in the space left of it and its
-                // ring cannot cover the rating stars or the slip/quantize
-                // buttons.
-                Item {
-                    id: jogArea
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.rightMargin: LateNightTheme.deckSettingsColumnWidth
-                    anchors.top: parent.top
+                // Big Spinny/Cover Slot (Large mode)
+                SpinnyCoverSlot {
+                    id: leftSpinnyBig
+                    Layout.preferredHeight: root.showBigSpinnyOrCover ? LateNightTheme.fullBigSpinnySize : 0
+                    Layout.preferredWidth: root.showBigSpinnyOrCover ? LateNightTheme.fullBigSpinnySize : 0
+                    group: root.group
+                    visible: root.showBigSpinnyOrCover
+                }
 
-                    // Big Spinny/Cover Slot (Large mode)
-                    SpinnyCoverSlot {
-                        id: leftSpinnyBig
-                        anchors.centerIn: parent
+                // Column containing Title rows and Overview row
+                ColumnLayout {
+                    id: titleOverviewColumn
+                    Layout.fillWidth: true
+                    Layout.fillHeight: false
+                    Layout.preferredHeight: 122
+                    spacing: 2
+
+                    // Title, Time, Artist, Duration Rows
+                    TitleTimeRows {
+                        id: titleTimeRows
+                        Layout.fillWidth: true
+                        Layout.minimumHeight: 55
+                        Layout.preferredHeight: 55
+                        Layout.maximumHeight: 55
                         group: root.group
-                        height: root.showBigSpinnyOrCover ? Math.min(LateNightTheme.fullBigSpinnySize, parent.height, parent.width) : 0
-                        visible: root.showBigSpinnyOrCover
-                        width: height
+
+                        TapHandler {
+                            onDoubleTapped: root.toggleFocus()
+                        }
                     }
 
-                    // Small Spinny/Cover Slot (Small mode)
-                    SpinnyCoverSlot {
-                        id: leftSpinnySmall
-                        anchors.centerIn: parent
-                        group: root.group
-                        height: root.showSmallSpinnyOrCover ? Math.min(LateNightTheme.smallSpinnySize, parent.height, parent.width) : 0
-                        visible: root.showSmallSpinnyOrCover
-                        width: height
+                    // Row containing Small Spinny (on the left of overview) and the Waveform Overview
+                    RowLayout {
+                        id: overviewAndSpinnyRow
+                        Layout.fillWidth: true
+                        Layout.fillHeight: false
+                        Layout.minimumHeight: 63
+                        Layout.preferredHeight: 63
+                        Layout.maximumHeight: 63
+                        spacing: 1
+
+                        // Small Spinny/Cover Slot (Small mode)
+                        SpinnyCoverSlot {
+                            id: leftSpinnySmall
+                            Layout.preferredHeight: root.showSmallSpinnyOrCover ? LateNightTheme.smallSpinnySize : 0
+                            Layout.preferredWidth: root.showSmallSpinnyOrCover ? LateNightTheme.smallSpinnySize : 0
+                            group: root.group
+                            visible: root.showSmallSpinnyOrCover
+                        }
+
+                        // Waveform Overview Row
+                        OverviewRow {
+                            id: overviewRow
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            group: root.group
+                        }
                     }
                 }
             }
 
-            // Transport and loop controls below the jog
+            // Lower Transport, Loop, Beatjump Placeholders
             TransportLoopBeatjumpPlaceholders {
                 id: transportRow
                 Layout.fillWidth: true
-                Layout.maximumHeight: 52
-                Layout.minimumHeight: 52
-                Layout.preferredHeight: 52
-                flowHeight: 52
+                Layout.fillHeight: false
+                Layout.minimumHeight: LateNightTheme.deckTransportHeight
+                Layout.preferredHeight: LateNightTheme.deckTransportHeight
+                Layout.maximumHeight: LateNightTheme.deckTransportHeight
                 group: root.group
+                showHotcues: root.showHotcues
                 show8Hotcues: root.show8Hotcues
-                showBeatjumpControls: false
-                showHotcues: false
-                showIntroOutroCues: false
+                showIntroOutroCues: root.showIntroOutroCues
                 showLoopControls: root.showLoopControls
-                showTransport: true
+                showBeatjumpControls: root.showBeatjumpControls
             }
         }
 

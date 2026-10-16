@@ -188,7 +188,11 @@ Item {
                 Layout.preferredHeight: 22
                 backgroundSource: LateNightTheme.assetDeckSyncBackground
                 activeBackgroundSuffix: "active"
-                iconName: "arrows-rotate"
+                // VirtualDJ writes the function on the button instead of
+                // drawing a glyph for it.
+                label: "SYNC"
+                labelColor: LateNightTheme.textColor
+                labelPixelSize: 11
                 group: root.group
                 key: "sync_enabled"
                 rightClickKey: "sync_leader"

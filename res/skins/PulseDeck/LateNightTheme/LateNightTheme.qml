@@ -241,7 +241,7 @@ QtObject {
     readonly property int deckMixerGutter: isClassic ? 4 : 3
     readonly property int deckRowGutter: isClassic ? 4 : 3
     readonly property int deckOuterMargin: isClassic ? 2 : 1
-    readonly property int fullDeckHeight: 230
+    readonly property int fullDeckHeight: 206
     // Legacy Compact is a 110px overview row plus a 30px transport shell,
     // including the outer deck insets. Keep this separate from Full's 55px
     // transport so hidden optional controls do not leave a phantom half-row.

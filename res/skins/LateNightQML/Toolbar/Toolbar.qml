@@ -1014,12 +1014,15 @@ Rectangle {
                         checked = root.stemGenerator.enabled;
                     }
 
-                    Connections {
-                        function onEnabledChanged() {
-                            stemsButton.checked = root.stemGenerator.enabled;
-                        }
-
-                        target: root.stemGenerator
+                    // QtQml.Connections ya declara su propia propiedad `enabled`
+                    // (con la señal `enabledChanged`), así que un handler
+                    // `onEnabledChanged` dentro de un Connections es un error de
+                    // compilación: "invalid override of property change signal or
+                    // superclass signal". Espejamos el estado con un Binding.
+                    Binding {
+                        target: stemsButton
+                        property: "checked"
+                        value: root.stemGenerator.enabled
                     }
 
                     onActivated: {
