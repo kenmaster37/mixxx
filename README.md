@@ -1,5 +1,10 @@
 # Mixxx
 
+> **Este repositorio es un fork personal de Mixxx 2.7.0-alpha** con cambios propios: aspecto
+> tipo VirtualDJ/Serato en los skins QML, generación de stems dentro de Mixxx, asistente de IA
+> para el AutoDJ, panel *Track Advisor*, servidor OSC y varios arreglos de audio, controlador y
+> teclado. Resumen con capturas de cada novedad: **[README-FORK.md](README-FORK.md)**.
+
 [![GitHub latest tag](https://img.shields.io/github/tag/mixxxdj/mixxx.svg)](https://mixxx.org/download)
 [![Packaging status](https://repology.org/badge/tiny-repos/mixxx.svg)](https://repology.org/metapackage/mixxx/versions)
 [![Build status](https://github.com/mixxxdj/mixxx/actions/workflows/build.yml/badge.svg)](https://github.com/mixxxdj/mixxx/actions/workflows/build.yml)
