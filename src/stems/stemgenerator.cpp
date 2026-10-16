@@ -1,6 +1,7 @@
 #include "stems/stemgenerator.h"
 
 #include <QAbstractItemModel>
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDesktopServices>
 #include <QDir>
@@ -298,9 +299,19 @@ QString StemGenerator::resolvedPython() const {
 
 QString StemGenerator::resolvedWorkerScript() const {
     const QDir resourceDir(CmdlineArgs::Instance().getResourcePath());
+    const QDir appDir(QCoreApplication::applicationDirPath());
+    const QDir settingsDir(m_pConfig->getSettingsPath());
+    // Besides the resource directory there are two other layouts to cover: a
+    // development tree runs the binary from its build directory, and a Linux
+    // package installs the scripts under the data directory, so the resource
+    // path on its own does not always lead to the worker.
     const QStringList candidates = {
             resourceDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py")),
             resourceDir.absoluteFilePath(QStringLiteral("../res/stems/stems_worker.py")),
+            appDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py")),
+            appDir.absoluteFilePath(QStringLiteral("../res/stems/stems_worker.py")),
+            appDir.absoluteFilePath(QStringLiteral("../share/mixxx/stems/stems_worker.py")),
+            settingsDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py")),
     };
     for (const QString& candidate : candidates) {
         if (QFileInfo::exists(candidate)) {
