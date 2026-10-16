@@ -119,11 +119,18 @@ Las skins y el QML son datos: se pueden probar contra el binario ya compilado.
 build\x64__legacy\mixxx.exe --resource-path "C:\ruta\al\repo\res"
 ```
 
-## 7. Paquetes generados
+## 7. Descargas y paquetes generados
 
-En `dist\` quedan los últimos paquetes construidos (`mixxx-2026-10-15-deck-vdj-amd64.msi` y
-`mixxx-2026-10-15-deck-vdj-amd64.deb`), pero **no se versionan**: se regeneran con los dos
-comandos de arriba.
+Los instaladores de la última tanda están publicados juntos en la página de **releases** del fork:
+**[`v2.7.0-alpha-2026-10-15`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-15)**
+
+| Paquete | Para |
+| --- | --- |
+| [`mixxx-2026-10-15-deck-vdj-amd64.msi`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-15/mixxx-2026-10-15-deck-vdj-amd64.msi) | **Windows** 10/11 x64 |
+| [`mixxx-2026-10-15-deck-vdj-amd64.deb`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-15/mixxx-2026-10-15-deck-vdj-amd64.deb) | **Linux** amd64 (Ubuntu 24.04 / Mint) |
+
+También quedan copias en `dist\`, pero **no se versionan**: se regeneran con los dos comandos de
+arriba.
 
 ## 8. Detalle de los cambios y estado
 
