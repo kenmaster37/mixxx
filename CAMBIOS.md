@@ -761,10 +761,13 @@ Tres cosas cerradas con comprobacion, ya sobre el equipo del usuario.
 - **El stem duplicado lo provocaba el propio generador**. Al terminar, `StemGenerator` llamaba a
   `rescanLibrary()`, y el escaneo añadia el `.stem.mp4` como una pista mas: la misma cancion
   aparecia dos veces. Comprobado con el usuario que **la pista original ya reproduce los stems**
-  (drum, vocals, etc.) y que su columna dice `STEMS`, asi que la llamada automatica sobra.
-  **Arreglo**: se quita la llamada; el fichero queda al lado del original y la coleccion lo ve en el
-  siguiente escaneo. El metodo `rescanLibrary()` **se conserva** porque la pagina Stems de
-  Preferencias lo usa en un boton (para forzar el escaneo cuando se quiera).
+  (drum, vocals, etc.) y que su columna dice `STEMS`.
+  **Decision final: se deja como estaba**, con el rescaneo automatico. Las dos filas se ven a
+  proposito: son el aviso de que la conversion se hizo, y el usuario prefiere eso a que la marca
+  aparezca sin mas. Ocultar los `.stem.mp4` cuando su original esta al lado (y seguir marcando el
+  original) queda **para una version siguiente**; el escaner de Mixxx por ahora no empareja ambas
+  cosas. El metodo `rescanLibrary()` sigue ademas disponible en un boton de la pagina Stems de
+  Preferencias.
 
 
 
