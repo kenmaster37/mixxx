@@ -364,7 +364,9 @@ void ControllerManager::slotSetUpDevices() {
         // device by name before giving up.
         QString mappingFilePath = getConfiguredMappingFileForDevice(deviceName);
         QFileInfo mappingFile = findMappingFile(mappingFilePath, mappingPaths);
-        if (!mappingFile.exists()) {
+        // findMappingFile() given an empty name returns the mapping folder itself,
+        // which exists: ask for a file, not for anything that exists.
+        if (mappingFilePath.isEmpty() || !mappingFile.isFile()) {
             mappingFile = findMappingForDevice(name,
                     mappingPaths,
                     QDir(resourceMappingsPath(m_pConfig)));
@@ -386,7 +388,7 @@ void ControllerManager::slotSetUpDevices() {
             continue;
         }
 
-        if (!mappingFile.exists()) {
+        if (!mappingFile.isFile()) {
             if (!mappingFilePath.isEmpty()) {
                 qDebug() << "Could not find" << mappingFilePath << "in any mapping path.";
             }
