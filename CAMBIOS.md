@@ -751,6 +751,13 @@ Tres cosas cerradas con comprobacion, ya sobre el equipo del usuario.
   absoluta al PNG de 256x256 dentro del prefijo), asi que no depende ni de la cache ni de que exista
   la herramienta. Los iconos se siguen copiando al tema y la cache se regenera **si** la herramienta
   esta, como extra para otros lanzadores; el `postrm` lo deja todo limpio.
+- **Y faltaba lo de fondo: Mixxx no ponia icono de ventana**. Ni `setWindowIcon` ni un `.ico` en Linux,
+  asi que el muelle y la barra de tareas, que muestran el icono **de la ventana** y no el del
+  `.desktop`, caian siempre en el generico. Ahora `main.cpp` carga los PNG instalados (desde la ruta
+  de recursos si viene en la linea de comandos y, si no, desde `<prefijo>/share/mixxx` calculado a
+  partir del ejecutable, porque en ese punto la ruta aun no esta resuelta) y llama a `setWindowIcon`.
+  Comprobado midiendo la propiedad `_NET_WM_ICON` con `xprop` sobre la ventana de Mixxx en un servidor
+  X virtual: **antes ausente, ahora presente** en las dos ventanas (splash y principal).
 - **El parpadeo de la onda era el bucle de dibujo, no la grafica**. El registro se llenaba de
   `VisualPlayPosition::calcOffsetAtNextVSync "[Channel1]" outdated position request (offset <
   minOffset)`: el dibujo pide la posicion del siguiente fotograma y esa posicion ya paso, asi que

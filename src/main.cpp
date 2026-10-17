@@ -1,5 +1,7 @@
 #include <QApplication>
 #include <QDir>
+#include <QFileInfo>
+#include <QIcon>
 #include <QPixmapCache>
 #include <QString>
 #include <QStringList>
@@ -287,6 +289,41 @@ int main(int argc, char * argv[]) {
 #endif
 
     MixxxApplication app(argc, argv);
+
+#ifdef __LINUX__
+    // The window icon is what docks and taskbars show for the running
+    // application; the .desktop entry only covers the launcher. Mixxx never
+    // set one, so Linux always fell back to the generic theme icon no matter
+    // what the entry said. The icons are installed next to the resources.
+    {
+        QIcon windowIcon;
+        const QStringList sizes = {QStringLiteral("512x512"),
+                QStringLiteral("256x256"),
+                QStringLiteral("128x128"),
+                QStringLiteral("64x64"),
+                QStringLiteral("32x32")};
+        QStringList bases;
+        if (!args.getResourcePath().isEmpty()) {
+            bases << args.getResourcePath();
+        }
+        // At this point the resource path is not resolved yet unless it came on
+        // the command line, so the standard layout next to the executable is
+        // used as well: <prefix>/bin/mixxx -> <prefix>/share/mixxx.
+        bases << QCoreApplication::applicationDirPath() + QStringLiteral("/../share/mixxx");
+        for (const QString& base : bases) {
+            for (const QString& size : sizes) {
+                const QString path = base + QStringLiteral("/images/icons/") + size +
+                        QStringLiteral("/apps/mixxx.png");
+                if (QFileInfo::exists(path)) {
+                    windowIcon.addFile(path);
+                }
+            }
+        }
+        if (!windowIcon.isNull()) {
+            app.setWindowIcon(windowIcon);
+        }
+    }
+#endif
 
 #if defined(Q_OS_WIN)
     // The Mixxx style is based on Qt's WindowsVista style
