@@ -7,10 +7,14 @@
 
 class QCheckBox;
 class QComboBox;
+class QGroupBox;
 class QLabel;
 class QLineEdit;
+class QListWidget;
+class QProgressBar;
 class QPushButton;
 class QTableWidget;
+class StemEngineInstaller;
 
 /// Preferences page for stem generation, see StemGenerator.
 ///
@@ -34,11 +38,15 @@ class DlgPrefStems : public DlgPreferencePage {
     void slotCancelQueue();
     void slotClearFinished();
     void slotOpenStemFolder();
+    /// Redraws the engine section, whatever changed on the installer.
+    void slotEngineChanged();
 
   private:
     void refreshEnvironment();
     void refreshQueue();
+    void refreshEngine();
     void setControlsEnabled(bool enabled);
+    StemEngineInstaller* engineInstaller() const;
 
     UserSettingsPointer m_pConfig;
 
@@ -58,4 +66,18 @@ class DlgPrefStems : public DlgPreferencePage {
     QPushButton* m_pClearButton{nullptr};
     QPushButton* m_pOpenFolderButton{nullptr};
     QTableWidget* m_pQueueTable{nullptr};
+
+    QLabel* m_pEngineStatusLabel{nullptr};
+    QComboBox* m_pEngineVariantComboBox{nullptr};
+    QComboBox* m_pEngineModelComboBox{nullptr};
+    QLabel* m_pEngineSizeLabel{nullptr};
+    QListWidget* m_pEngineListWidget{nullptr};
+    QProgressBar* m_pEngineProgressBar{nullptr};
+    QPushButton* m_pEngineInstallButton{nullptr};
+    QPushButton* m_pEngineCancelButton{nullptr};
+    QPushButton* m_pEngineRemoveButton{nullptr};
+    QPushButton* m_pEngineFolderButton{nullptr};
+    /// Set while the widgets are filled from the installer, so that writing them
+    /// back does not look like a choice the user made.
+    bool m_updatingEngine{false};
 };

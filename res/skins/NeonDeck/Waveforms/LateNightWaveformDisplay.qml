@@ -226,13 +226,10 @@ Item {
                 textColor: LateNightTheme.waveformMarkerTextColor
             }
 
-            Mixxx.WaveformMark {
-                align: 'top|right'
-                color: root.cueColor
-                control: "cue_point"
-                text: 'CUE'
-                textColor: LateNightTheme.waveformMarkerTextColor
-            }
+            // The cue marker is left out on purpose: it appeared over the
+            // waveform and blinked there even with no cue set on the deck (the
+            // play marker redraws on top of it), which reads as a broken
+            // marker rather than as information.
             Mixxx.WaveformMark {
                 align: 'top|left'
                 color: root.loopColor

@@ -1,5 +1,6 @@
-pragma ComponentBehavior: Bound
-
+// No "pragma ComponentBehavior: Bound" here: the parameter loaders below get an
+// inline object, which Qt turns into a bound component and then refuses to
+// instantiate outside this file (Linux logged it and the slots came out empty).
 import Mixxx 1.0 as Mixxx
 import QtQuick
 import "../Controls" as LateNightControls

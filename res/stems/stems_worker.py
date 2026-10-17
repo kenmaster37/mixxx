@@ -66,6 +66,49 @@ def gpu_name() -> str:
     return ""
 
 
+def is_program(path: str) -> bool:
+    """Whether the operating system can start ``path`` as a program.
+
+    ``os.path.isfile`` is not enough: ``imageio_ffmpeg`` keeps a README next to
+    its binary, and a path that exists is not necessarily something that can be
+    run.
+    """
+    if not path or not os.path.isfile(path):
+        return False
+    if os.name != "nt":
+        return os.access(path, os.X_OK)
+    extensions = os.environ.get("PATHEXT") or ".COM;.EXE;.BAT;.CMD"
+    return os.path.splitext(path)[1].upper() in extensions.upper().split(";")
+
+
+def usable_encoder(value: str) -> bool:
+    if is_program(value):
+        return True
+    # A bare name is meant to be looked up on PATH.
+    return not os.path.dirname(value) and bool(shutil.which(value))
+
+
+def resolve_ffmpeg(value: str) -> str:
+    """The encoder to use, starting from what Mixxx passed on.
+
+    An empty value, a path that is not there, or a file that is not a program
+    are all accepted without a word by the parent process, and every one of them
+    fails at the very end of a job instead: the separation is finished and the
+    container cannot be written, with nothing but the operating system saying it
+    cannot find the file specified. The engine ships ``imageio_ffmpeg``, which
+    knows where its own binary is, so it is asked before giving up.
+    """
+    if usable_encoder(value):
+        return shutil.which(value) or value
+    try:
+        import imageio_ffmpeg
+
+        bundled = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # noqa: BLE001 - a plain virtualenv need not have it
+        return value
+    return bundled if is_program(bundled) else value
+
+
 def probe(ffmpeg: str) -> dict:
     """Describe the environment; never raises."""
     report: dict = {"python": sys.version.split()[0], "errors": []}
@@ -88,9 +131,9 @@ def probe(ffmpeg: str) -> dict:
     except Exception as error:  # noqa: BLE001 - reported to the user
         report["errors"].append(f"demucs_onnx: {error}")
 
-    resolved_ffmpeg = shutil.which(ffmpeg)
-    report["ffmpeg"] = resolved_ffmpeg or ""
-    if not resolved_ffmpeg:
+    resolved_ffmpeg = resolve_ffmpeg(ffmpeg)
+    report["ffmpeg"] = resolved_ffmpeg if usable_encoder(resolved_ffmpeg) else ""
+    if not report["ffmpeg"]:
         report["errors"].append(f"ffmpeg not found: {ffmpeg}")
 
     report["gpu"] = gpu_name()
@@ -144,6 +187,17 @@ def separate(args) -> int:
     if not os.path.isfile(args.input):
         emit("ERROR", f"input file not found: {args.input}")
         return 2
+    # Mixxx always writes into a folder it has created, but the engine is also
+    # usable on its own, and failing here would be a confusing way to start.
+    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+    # Checked before the separation and not when the container is written: the
+    # encoder is only used at the end, and a job that has already spent minutes
+    # on the separation should not be thrown away over a setting.
+    args.ffmpeg = resolve_ffmpeg(args.ffmpeg)
+    if not usable_encoder(args.ffmpeg):
+        emit("ERROR",
+             f"the audio encoder (ffmpeg) was not found: {args.ffmpeg or '(empty)'}")
+        return 7
 
     try:
         import demucs_onnx

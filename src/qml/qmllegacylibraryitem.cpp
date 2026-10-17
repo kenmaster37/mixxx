@@ -312,10 +312,19 @@ void QmlLegacyLibraryItem::renderOffscreen() {
     }
     syncRootWidgetGlobalPosition();
     updateWidgetSize();
-    const QSize size(qMax(1, qRound(width())),
-            qMax(1, qRound(height())));
-    if (m_offscreenPixmap.size() != size) {
+    // The pixmap is what ends up on screen, so it has to be as dense as the
+    // screen. Rendering it at one pixel per logical pixel and letting the scene
+    // graph magnify it is what made the library and its side panel look blurry
+    // on a display scaled to 175%, while the QML around them stayed sharp.
+    // The widget tree keeps being laid out in logical pixels, only the drawing
+    // is done at the resolution of the device.
+    const qreal pixelRatio = window() != nullptr ? window()->devicePixelRatio() : qreal(1.0);
+    const QSize size(qMax(1, qCeil(width() * pixelRatio)),
+            qMax(1, qCeil(height() * pixelRatio)));
+    if (m_offscreenPixmap.size() != size ||
+            !qFuzzyCompare(m_offscreenPixmap.devicePixelRatio(), pixelRatio)) {
         m_offscreenPixmap = QPixmap(size);
+        m_offscreenPixmap.setDevicePixelRatio(pixelRatio);
     }
     m_offscreenPixmap.fill(kLegacyLibraryBackgroundColor);
 
@@ -334,7 +343,9 @@ void QmlLegacyLibraryItem::paint(QPainter* pPainter) {
     if (m_offscreenPixmap.isNull()) {
         return;
     }
-    pPainter->drawPixmap(0, 0, m_offscreenPixmap);
+    // Drawn at the density it was rendered with, which is the density of the
+    // window: one source pixel per device pixel, no magnification.
+    pPainter->drawPixmap(QPointF(0, 0), m_offscreenPixmap);
 }
 
 void QmlLegacyLibraryItem::geometryChange(
@@ -1686,6 +1697,16 @@ void QmlLegacyLibraryItem::updatePolish() {
     m_isDirty = false;
     renderOffscreen();
     update();
+}
+
+void QmlLegacyLibraryItem::itemChange(ItemChange change, const ItemChangeData& value) {
+    QQuickPaintedItem::itemChange(change, value);
+    // The offscreen pixmap follows the density of the window, so it has to be
+    // rendered again when the window moves to a screen that is scaled
+    // differently, or the library would be shown at the wrong resolution.
+    if (change == ItemDevicePixelRatioHasChanged) {
+        requestRender();
+    }
 }
 
 bool QmlLegacyLibraryItem::eventFilter(QObject* pWatched, QEvent* pEvent) {

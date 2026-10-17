@@ -107,6 +107,9 @@ class Library: public QObject {
     /// and shows the results by switching the view.
     void searchTracksInCollection(const QString& query);
     void showAutoDJ();
+    /// Passes a change of the AI settings on to the Auto DJ view, which is
+    /// usually already open when the preferences are applied.
+    void refreshAutoDjAiAvailability();
 
     static const QString kAutoDJViewName;
 

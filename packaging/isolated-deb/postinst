@@ -1,0 +1,58 @@
+#!/bin/sh
+# Only for the isolated test package: this Mixxx is installed under its own
+# prefix, so nothing puts it on the PATH and nothing shows it in the menu. The
+# official package does not need any of this.
+set -e
+
+PREFIX=/opt/mixxx-stem-engine
+LINK=/usr/local/bin/mixxx-stem-engine
+DESKTOP=/usr/share/applications/org.mixxx.Mixxx-stem-engine.desktop
+SOURCE=$PREFIX/share/applications/org.mixxx.Mixxx.desktop
+ICON_NAME=mixxx-stem-engine
+ICON_SIZES="32x32 64x64 128x128 256x256 512x512"
+
+if [ -x "$PREFIX/bin/mixxx" ] && [ ! -e "$LINK" ]; then
+    ln -s "$PREFIX/bin/mixxx" "$LINK"
+fi
+
+if [ -f "$SOURCE" ]; then
+    # The source file can carry carriage returns (the file comes from a Windows
+    # checkout), and a desktop entry with them is not valid: the menu and the
+    # dock ignore it and the icon ends up as the generic one. So they go out
+    # before rewriting the lines this package changes, and StartupWMClass is
+    # set to the class Mixxx really reports on X11 ("mixxx", "Mixxx"), which is
+    # not the org.mixxx.mixxx the original entry declares for Wayland.
+    tr -d '\r' < "$SOURCE" | sed \
+        -e "s|^Name=Mixxx.*|Name=Mixxx (motor de stems)|" \
+        -e "s|^Exec=.*|Exec=$PREFIX/bin/mixxx %F|" \
+        -e "s|^Icon=.*|Icon=$ICON_NAME|" \
+        -e "s|^StartupWMClass=.*|StartupWMClass=mixxx|" \
+        > "$DESKTOP"
+    chmod 644 "$DESKTOP"
+fi
+
+# The icons are copied into the icon theme under a name of their own, so that
+# the dock and the menu find them by name and the ones of the official package
+# are left alone.
+for size in $ICON_SIZES; do
+    if [ -f "$PREFIX/share/icons/hicolor/$size/apps/mixxx.png" ]; then
+        install -Dm644 "$PREFIX/share/icons/hicolor/$size/apps/mixxx.png" \
+            "/usr/share/icons/hicolor/$size/apps/$ICON_NAME.png"
+    fi
+done
+if [ -f "$PREFIX/share/icons/hicolor/scalable/apps/mixxx.svg" ]; then
+    install -Dm644 "$PREFIX/share/icons/hicolor/scalable/apps/mixxx.svg" \
+        "/usr/share/icons/hicolor/scalable/apps/$ICON_NAME.svg"
+fi
+
+# The cache is what the menu and the dock read first: without refreshing it the
+# icons above stay invisible and both show their generic icon.
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
+fi
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
+fi
+
+exit 0

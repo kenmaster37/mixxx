@@ -141,8 +141,14 @@ DlgPreferences::DlgPreferences(
             tr("OSC"),
             "ic_preferences_controllers.svg");
 
-    addPageWidget(PreferencesPage(
-                          new DlgPrefAi(this, m_pConfig),
+    DlgPrefAi* pAiPage = new DlgPrefAi(this, m_pConfig);
+    // The Auto DJ view follows the assistant switch, and it is usually the view
+    // the user has open when this page is applied.
+    connect(pAiPage,
+            &DlgPrefAi::settingsApplied,
+            pLibrary.get(),
+            &Library::refreshAutoDjAiAvailability);
+    addPageWidget(PreferencesPage(pAiPage,
                           new QTreeWidgetItem(contentsTreeWidget, QTreeWidgetItem::Type)),
             tr("AI Assistant"),
             "ic_preferences_controllers.svg");

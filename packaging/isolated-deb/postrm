@@ -1,0 +1,28 @@
+#!/bin/sh
+# Undo what postinst added, so the test package can be removed and reinstalled
+# without leaving a broken launcher behind.
+set -e
+
+LINK=/usr/local/bin/mixxx-stem-engine
+DESKTOP=/usr/share/applications/org.mixxx.Mixxx-stem-engine.desktop
+ICON_NAME=mixxx-stem-engine
+ICON_SIZES="32x32 64x64 128x128 256x256 512x512"
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    [ -L "$LINK" ] && rm -f "$LINK"
+    [ -f "$DESKTOP" ] && rm -f "$DESKTOP"
+    for size in $ICON_SIZES; do
+        [ -f "/usr/share/icons/hicolor/$size/apps/$ICON_NAME.png" ] &&
+            rm -f "/usr/share/icons/hicolor/$size/apps/$ICON_NAME.png"
+    done
+    [ -f "/usr/share/icons/hicolor/scalable/apps/$ICON_NAME.svg" ] &&
+        rm -f "/usr/share/icons/hicolor/scalable/apps/$ICON_NAME.svg"
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q /usr/share/applications || true
+    fi
+fi
+
+exit 0

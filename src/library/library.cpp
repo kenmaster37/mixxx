@@ -789,6 +789,10 @@ void Library::showAutoDJ() {
     m_pSidebarModel->slotFeatureSelect(m_pAutoDJFeature, QModelIndex(), false);
 }
 
+void Library::refreshAutoDjAiAvailability() {
+    m_pAutoDJFeature->refreshAiAvailability();
+}
+
 #ifdef __ENGINEPRIME__
 std::unique_ptr<mixxx::LibraryExporter> Library::makeLibraryExporter(
         QWidget* parent) {

@@ -274,6 +274,18 @@ int main(int argc, char * argv[]) {
 
     adjustScaleFactor(&args);
 
+#ifdef __LINUX__
+    // The QML waveforms read the play position once per frame, and on some
+    // setups the threaded render loop runs faster than the audio callback
+    // updates it. Mixxx then clamps every request ("outdated position
+    // request") and the waveform stalls for a frame, which shows up as a fast
+    // flicker. The basic loop keeps it in step. Anyone can override it by
+    // setting QSG_RENDER_LOOP before starting Mixxx.
+    if (qEnvironmentVariableIsEmpty("QSG_RENDER_LOOP")) {
+        qputenv("QSG_RENDER_LOOP", "basic");
+    }
+#endif
+
     MixxxApplication app(argc, argv);
 
 #if defined(Q_OS_WIN)

@@ -1,5 +1,6 @@
-pragma ComponentBehavior: Bound
-
+// No "pragma ComponentBehavior: Bound" here: the two Component blocks below go
+// to a Loader, and Qt refuses to instantiate a bound component outside its
+// creation context, which left the unit empty (Linux logged it at startup).
 import "../Controls" as Controls
 import "../Deck" as DeckControls
 import "../LateNightTheme"

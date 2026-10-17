@@ -1643,8 +1643,11 @@ add_library(
   src/sources/soundsourceproviderregistry.cpp
   src/sources/soundsourceproxy.cpp
   src/sources/soundsourcesndfile.cpp
+  src/stems/stemengineinstaller.cpp
   src/stems/stemgenerator.cpp
   src/stems/stemqueuemodel.cpp
+  src/stems/tararchive.cpp
+  src/stems/ziparchive.cpp
   src/track/albuminfo.cpp
   src/track/beatfactory.cpp
   src/track/beats.cpp
@@ -2623,6 +2626,15 @@ if(NOT ANDROID)
     DESTINATION "${MIXXX_INSTALL_DATADIR}"
   )
 
+  # Bitmaps and SVGs that the skins and the shared QML components load by
+  # relative path. Without them, references such as
+  # ../images/keywheel/keywheel.svg resolve to nothing and the dialog shows a
+  # hole (Linux logged "Cannot open: .../images/keywheel/keywheel.svg").
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/res/images"
+    DESTINATION "${MIXXX_INSTALL_DATADIR}"
+  )
+
   # Controller mappings
   install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/res/controllers"
@@ -2637,6 +2649,8 @@ if(NOT ANDROID)
     FILES_MATCHING
     PATTERN "*.py"
     PATTERN "*.txt"
+    # The list of files that make up the engine the installer downloads.
+    PATTERN "*.json"
     PATTERN "__pycache__" EXCLUDE
   )
 
@@ -3093,6 +3107,7 @@ if(BUILD_TESTING)
       ${src-mixxx-test}
       src/test/stemtest.cpp
       src/test/steminfotest.cpp
+      src/test/tararchive_test.cpp
       src/test/stemcontrolobjecttest.cpp
     )
   endif()
@@ -5564,6 +5579,13 @@ if(WAVPACK)
   target_compile_definitions(mixxx-lib PUBLIC __WV__)
   target_link_libraries(mixxx-lib PRIVATE WavPack::wavpack)
 endif()
+
+# The stem engine installer unpacks the ZIP archives it downloads, and zlib is
+# the only decompressor it needs. Mixxx already requires zlib for libdjinterop,
+# but through an imported target's interface, so it is linked by name here
+# rather than relying on it to come along.
+find_package(ZLIB 1.2.8 REQUIRED)
+target_link_libraries(mixxx-lib PRIVATE ZLIB::ZLIB)
 
 target_precompile_headers(
   mixxx-lib

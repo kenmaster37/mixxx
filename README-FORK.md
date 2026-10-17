@@ -3,9 +3,9 @@
 Este repositorio es un **fork personal** de [Mixxx](https://mixxx.org) **2.7.0-alpha**, hecho
 sobre la rama `main` de [mixxxdj/mixxx](https://github.com/mixxxdj/mixxx) (commit base
 `0fffd3d0d0`). Además de todo lo que trae upstream, lleva el trabajo de estas semanas:
-**aspecto tipo VirtualDJ/Serato** en los skins QML, **generación de stems dentro de Mixxx**,
-**asistente de IA para el AutoDJ**, panel **Track Advisor**, **servidor OSC** y una tanda de
-arreglos de audio, de controlador y de teclado.
+**aspecto tipo VirtualDJ/Serato** en los skins QML, **generación de stems dentro de Mixxx**
+(Windows y Linux, con CPU o GPU), **asistente de IA para el AutoDJ**, panel **Track Advisor**,
+**servidor OSC** y una tanda de arreglos de audio, de controlador y de teclado.
 
 > [!WARNING]
 > **Recursos gráficos:** no se ha copiado ni un solo fichero gráfico, logotipo ni fuente de
@@ -152,17 +152,40 @@ build\x64__legacy\mixxx.exe --resource-path "C:\ruta\al\repo\res"
 ## 7. Descargas y paquetes generados
 
 Los instaladores de la última tanda están publicados juntos en la página de **releases** del fork:
-**[`v2.7.0-alpha-2026-10-15`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-15)**
+**[`v2.7.0-alpha-2026-10-16`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-16)**
 
 | Paquete | Para |
 | --- | --- |
-| [`mixxx-2026-10-15-deck-vdj-amd64.msi`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-15/mixxx-2026-10-15-deck-vdj-amd64.msi) | **Windows** 10/11 x64 |
-| [`mixxx-2026-10-15-deck-vdj-amd64.deb`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-15/mixxx-2026-10-15-deck-vdj-amd64.deb) | **Linux** amd64 (Ubuntu 24.04 / Mint) |
+| [`mixxx-2026-10-16-stem-engine-amd64.msi`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-16/mixxx-2026-10-16-stem-engine-amd64.msi) | **Windows** 10/11 x64 |
+| [`mixxx-2026-10-16-stem-engine-amd64.deb`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-16/mixxx-2026-10-16-stem-engine-amd64.deb) | **Linux** amd64 (Ubuntu 24.04 / Mint) |
+
+La tanda anterior sigue disponible en
+[`v2.7.0-alpha-2026-10-15`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-15).
 
 También quedan copias en `dist\`, pero **no se versionan**: se regeneran con los dos comandos de
 arriba.
 
-## 8. Detalle de los cambios y estado
+## 8. Tanda del 16 de octubre: el motor de stems en Linux
+
+Esta tanda va sobre todo del **motor de stems**, que hasta ahora solo se instalaba en Windows, y
+de un puñado de fallos que aparecieron al probarlo en un Linux Mint y en un portátil sin GPU.
+
+| Novedad | Cómo se ve |
+| --- | --- |
+| **El motor de stems ya se instala en Linux.** El manifiesto de Linux (`res/stems/engine-linux.json`) baja un intérprete de Python autocontenido y las ruedas `manylinux`, se desempaqueta con un lector de `tar.gz` propio (`src/stems/tararchive.cpp`, con enlaces simbólicos, permisos y cancelación) y se le dan permisos a su `ffmpeg`. Con **GPU**: ONNX Runtime con CUDA y `LD_LIBRARY_PATH` apuntando a las ruedas de NVIDIA. Medido en una RTX 3060: **12,8 s** por cada 12 s de audio, frente a **19,0 s** con CPU. | ![Motor de stems](docs/fork/stems-preferencias.png) |
+| **El `.deb` ya se encuentra, se abre y se quita.** El paquete de pruebas se instala en su propio prefijo, y el `postinst` crea el lanzador `/usr/local/bin/mixxx-stem-engine`, la entrada de menú y los iconos en el tema (con `gtk-update-icon-cache`, que era lo que faltaba para que no saliera la rueda genérica); el `postrm` lo deja todo limpio. | ![Icono en el menú](docs/fork/mic-aux-linux.png) |
+| **MIC/AUX y las ranuras de efectos volvían vacías en Linux.** Los QML de esas unidades llevaban `pragma ComponentBehavior: Bound` y a la vez entregaban sus `Component` a un `Loader`, que Qt prohíbe: el ítem no se creaba y quedaba la caja. Quitado el `pragma` en las tres pieles QML; verificado que desaparecen los avisos `outside its creation context` y que `MIC 1..4` y `AUX 1..4` se dibujan. | ![MIC y AUX en Linux](docs/fork/mic-aux-linux.png) |
+| **Biblioteca y panel lateral nítidos con escalado fraccionario.** La biblioteca es un árbol de widgets que se pinta fuera de pantalla; el *pixmap* se creaba a un píxel por píxel lógico y el motor lo ampliaba. Ahora se crea a resolución del dispositivo y se repinta al cambiar de pantalla. | ![Biblioteca](docs/fork/biblioteca.png) |
+| **El parpadeo de la onda.** El registro se llenaba de `VisualPlayPosition::calcOffsetAtNextVSync ... outdated position request`: el dibujo pedía la posición del siguiente fotograma y ya había pasado, así que la onda se quedaba quieta un fotograma y saltaba. En Linux se fija `QSG_RENDER_LOOP=basic` antes de crear la aplicación (y se puede sobrescribir con la variable de entorno). | ![Deck estilo VirtualDJ](docs/fork/deck-vdj.png) |
+| **Las imágenes del proyecto no se instalaban.** `res/images` no entraba en ningún paquete, así que referencias relativas como `../images/keywheel/keywheel.svg` no resolvían y el círculo de tonalidades salía hueco. Ahora se instala el árbol completo (136 ficheros). | ![Skin NeonDeck](docs/fork/neondeck.png) |
+| **Contenedor `.stem.mp4` que fallaba al final.** El worker pedía `ffprobe`, que el motor no trae: se lee la etiqueta con el propio `ffmpeg` (`-f ffmetadata`) y se comprueba el codificador antes de separar. | ![Panel de stems](docs/fork/stems-cola.png) |
+| **Arreglos de los menús.** El proxy `Mixxx.Application` no resuelve en algún entorno, y los atajos de los menús se armaban igual: se comían la barra espaciadora al escribir. Ahora, si no hay información de foco, no se arma ningún atajo. | ![Botón SYNC](docs/fork/sync.png) |
+
+Con esto, **un escaneo de la biblioteca sigue mostrando el `.stem.mp4` como una pista aparte**: es lo
+que avisa de que la conversión se hizo. Ocultarlo cuando su original está al lado queda para una
+versión siguiente.
+
+## 9. Detalle de los cambios y estado
 
 El desarrollo está documentado en [`CAMBIOS.md`](CAMBIOS.md), sección por sección: qué se cambió,
 por qué, qué se descartó y qué queda pendiente (renombrar la paleta interna, afinar más la

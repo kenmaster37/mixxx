@@ -15,10 +15,14 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QMessageBox>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
+#include "stems/stemengineinstaller.h"
 #include "stems/stemgenerator.h"
 #include "stems/stemqueuemodel.h"
 
@@ -87,6 +91,47 @@ DlgPrefStems::DlgPrefStems(QWidget* pParent, UserSettingsPointer pConfig)
     pEnvironmentButtonsLayout->addStretch(1);
     pEnvironmentLayout->addLayout(pEnvironmentButtonsLayout);
     pPageLayout->addWidget(pEnvironmentGroup);
+
+    // Next to the environment section, because it is the other way of getting
+    // the same thing: with the engine installed there is nothing else to
+    // prepare, and the interpreter below becomes the exception.
+    auto* pEngineGroup = new QGroupBox(tr("Engine"), this);
+    auto* pEngineLayout = new QVBoxLayout(pEngineGroup);
+    m_pEngineStatusLabel = new QLabel(pEngineGroup);
+    m_pEngineStatusLabel->setWordWrap(true);
+    pEngineLayout->addWidget(m_pEngineStatusLabel);
+
+    auto* pEngineChoicesLayout = new QFormLayout();
+    m_pEngineVariantComboBox = new QComboBox(pEngineGroup);
+    pEngineChoicesLayout->addRow(tr("Processor"), m_pEngineVariantComboBox);
+    m_pEngineModelComboBox = new QComboBox(pEngineGroup);
+    pEngineChoicesLayout->addRow(tr("Model quality"), m_pEngineModelComboBox);
+    pEngineLayout->addLayout(pEngineChoicesLayout);
+
+    m_pEngineSizeLabel = new QLabel(pEngineGroup);
+    m_pEngineSizeLabel->setWordWrap(true);
+    pEngineLayout->addWidget(m_pEngineSizeLabel);
+
+    m_pEngineListWidget = new QListWidget(pEngineGroup);
+    m_pEngineListWidget->setMaximumHeight(110);
+    pEngineLayout->addWidget(m_pEngineListWidget);
+
+    m_pEngineProgressBar = new QProgressBar(pEngineGroup);
+    m_pEngineProgressBar->setRange(0, 100);
+    pEngineLayout->addWidget(m_pEngineProgressBar);
+
+    auto* pEngineButtonsLayout = new QHBoxLayout();
+    m_pEngineInstallButton = new QPushButton(tr("Install the engine"), pEngineGroup);
+    pEngineButtonsLayout->addWidget(m_pEngineInstallButton);
+    m_pEngineCancelButton = new QPushButton(tr("Cancel"), pEngineGroup);
+    pEngineButtonsLayout->addWidget(m_pEngineCancelButton);
+    m_pEngineRemoveButton = new QPushButton(tr("Remove the engine"), pEngineGroup);
+    pEngineButtonsLayout->addWidget(m_pEngineRemoveButton);
+    m_pEngineFolderButton = new QPushButton(tr("Open the engine folder"), pEngineGroup);
+    pEngineButtonsLayout->addWidget(m_pEngineFolderButton);
+    pEngineButtonsLayout->addStretch(1);
+    pEngineLayout->addLayout(pEngineButtonsLayout);
+    pPageLayout->addWidget(pEngineGroup);
 
     auto* pSettingsGroup = new QGroupBox(tr("Stem generation"), this);
     auto* pSettingsLayout = new QFormLayout(pSettingsGroup);
@@ -174,6 +219,97 @@ DlgPrefStems::DlgPrefStems(QWidget* pParent, UserSettingsPointer pConfig)
             pGenerator->probe();
         }
     });
+    if (StemEngineInstaller* pInstaller = engineInstaller()) {
+        connect(pInstaller,
+                &StemEngineInstaller::stateChanged,
+                this,
+                &DlgPrefStems::slotEngineChanged);
+        connect(pInstaller, &StemEngineInstaller::stateChanged, this, [this] {
+            // With the engine installed the interpreter and the worker come out
+            // of it, so both what the environment panel says and what the
+            // generator thinks it can do have to be worked out again. Only when
+            // the engine appears or goes away, not on every step of a download.
+            StemEngineInstaller* pEngine = engineInstaller();
+            if (!pEngine) {
+                return;
+            }
+            const QString state = pEngine->state();
+            if (state != QLatin1String("ready") && state != QLatin1String("outdated") &&
+                    state != QLatin1String("absent")) {
+                return;
+            }
+            refreshEnvironment();
+            if (StemGenerator* pGenerator = StemGenerator::instance()) {
+                pGenerator->probe();
+            }
+        });
+        connect(pInstaller,
+                &StemEngineInstaller::manifestChanged,
+                this,
+                &DlgPrefStems::slotEngineChanged);
+        connect(pInstaller,
+                &StemEngineInstaller::itemsChanged,
+                this,
+                &DlgPrefStems::slotEngineChanged);
+        connect(pInstaller,
+                &StemEngineInstaller::progressChanged,
+                this,
+                &DlgPrefStems::slotEngineChanged);
+
+        connect(m_pEngineVariantComboBox,
+                QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this,
+                [this](int) {
+                    if (m_updatingEngine) {
+                        return;
+                    }
+                    if (StemEngineInstaller* pChosen = engineInstaller()) {
+                        pChosen->setVariant(m_pEngineVariantComboBox->currentData().toString());
+                    }
+                });
+        connect(m_pEngineModelComboBox,
+                QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this,
+                [this](int) {
+                    if (m_updatingEngine) {
+                        return;
+                    }
+                    if (StemEngineInstaller* pChosen = engineInstaller()) {
+                        pChosen->setModel(m_pEngineModelComboBox->currentData().toString());
+                    }
+                });
+        connect(m_pEngineInstallButton, &QPushButton::clicked, this, [this] {
+            if (StemEngineInstaller* pChosen = engineInstaller()) {
+                pChosen->install();
+            }
+        });
+        connect(m_pEngineCancelButton, &QPushButton::clicked, this, [this] {
+            if (StemEngineInstaller* pChosen = engineInstaller()) {
+                pChosen->cancel();
+            }
+        });
+        connect(m_pEngineRemoveButton, &QPushButton::clicked, this, [this] {
+            StemEngineInstaller* pChosen = engineInstaller();
+            if (!pChosen) {
+                return;
+            }
+            const auto answer = QMessageBox::question(this,
+                    tr("Remove the engine"),
+                    tr("The engine and the model it downloaded will be deleted, and "
+                       "separating will need them again. Stems that were already generated "
+                       "are not touched."));
+            if (answer == QMessageBox::Yes) {
+                pChosen->removeEngine();
+            }
+        });
+        connect(m_pEngineFolderButton, &QPushButton::clicked, this, [this] {
+            if (StemEngineInstaller* pChosen = engineInstaller()) {
+                pChosen->openEngineFolder();
+            }
+        });
+        refreshEngine();
+    }
+
     connect(m_pOpenFolderButton, &QPushButton::clicked, this, &DlgPrefStems::slotOpenStemFolder);
     connect(m_pCancelButton, &QPushButton::clicked, this, &DlgPrefStems::slotCancelQueue);
     connect(m_pClearButton, &QPushButton::clicked, this, &DlgPrefStems::slotClearFinished);
@@ -206,7 +342,113 @@ DlgPrefStems::DlgPrefStems(QWidget* pParent, UserSettingsPointer pConfig)
 
 DlgPrefStems::~DlgPrefStems() = default;
 
+StemEngineInstaller* DlgPrefStems::engineInstaller() const {
+    StemGenerator* pGenerator = StemGenerator::instance();
+    return pGenerator ? pGenerator->engineInstaller() : nullptr;
+}
+
+void DlgPrefStems::slotEngineChanged() {
+    refreshEngine();
+}
+
+void DlgPrefStems::refreshEngine() {
+    StemEngineInstaller* pInstaller = engineInstaller();
+    if (!pInstaller) {
+        return;
+    }
+
+    // The combos are filled from the installer, so writing them back has to be
+    // held off while that happens: otherwise a redraw looks like a choice.
+    m_updatingEngine = true;
+    m_pEngineVariantComboBox->clear();
+    const QVariantList variants = pInstaller->variants();
+    for (const QVariant& value : variants) {
+        const QVariantMap entry = value.toMap();
+        m_pEngineVariantComboBox->addItem(
+                tr("%1 (%2)")
+                        .arg(entry.value(QStringLiteral("label")).toString(),
+                                entry.value(QStringLiteral("sizeText")).toString()),
+                entry.value(QStringLiteral("key")));
+    }
+    int variantIndex = m_pEngineVariantComboBox->findData(pInstaller->variant());
+    m_pEngineVariantComboBox->setCurrentIndex(variantIndex < 0 ? 0 : variantIndex);
+
+    m_pEngineModelComboBox->clear();
+    const QVariantList models = pInstaller->models();
+    for (const QVariant& value : models) {
+        const QVariantMap entry = value.toMap();
+        m_pEngineModelComboBox->addItem(
+                tr("%1 (%2)")
+                        .arg(entry.value(QStringLiteral("label")).toString(),
+                                entry.value(QStringLiteral("sizeText")).toString()),
+                entry.value(QStringLiteral("key")));
+    }
+    int modelIndex = m_pEngineModelComboBox->findData(pInstaller->model());
+    m_pEngineModelComboBox->setCurrentIndex(modelIndex < 0 ? 0 : modelIndex);
+    m_updatingEngine = false;
+
+    QString status;
+    if (!pInstaller->platformNotice().isEmpty()) {
+        status = pInstaller->platformNotice();
+    } else if (pInstaller->state() == QLatin1String("failed") &&
+            !pInstaller->errorText().isEmpty()) {
+        status = pInstaller->errorText();
+    } else if (!pInstaller->statusText().isEmpty()) {
+        status = pInstaller->statusText();
+    } else {
+        status = tr("Not installed. Separating needs this engine, or a Python of your own "
+                    "with the libraries (see the interpreter below).");
+    }
+    if (!pInstaller->gpuName().isEmpty() && pInstaller->platformNotice().isEmpty()) {
+        status += QLatin1Char(' ');
+        status += tr("Graphics card found: %1.").arg(pInstaller->gpuName());
+    }
+    m_pEngineStatusLabel->setText(status);
+
+    const QVariantList items = pInstaller->items();
+    m_pEngineSizeLabel->setText(items.isEmpty()
+                    ? QString()
+                    : tr("To download: %1 files, %2. Keep about twice that free while it is "
+                         "being unpacked.")
+                              .arg(items.size())
+                              .arg(pInstaller->totalSizeText()));
+
+    m_pEngineListWidget->clear();
+    for (const QVariant& value : items) {
+        const QVariantMap entry = value.toMap();
+        QString label = tr("%1  —  %2")
+                                .arg(entry.value(QStringLiteral("label")).toString(),
+                                        entry.value(QStringLiteral("sizeText")).toString());
+        const QString state = entry.value(QStringLiteral("state")).toString();
+        if (state == QLatin1String("done")) {
+            label += tr("  (ready)");
+        } else if (state == QLatin1String("downloading")) {
+            label += tr("  (downloading)");
+        } else if (state == QLatin1String("failed")) {
+            label += tr("  (failed)");
+        }
+        new QListWidgetItem(label, m_pEngineListWidget);
+    }
+    if (!pInstaller->freeSpaceText().isEmpty()) {
+        new QListWidgetItem(tr("Free space on the drive: %1").arg(pInstaller->freeSpaceText()),
+                m_pEngineListWidget);
+    }
+
+    const bool busy = pInstaller->busy();
+    m_pEngineProgressBar->setVisible(busy);
+    m_pEngineProgressBar->setValue(pInstaller->progress());
+    m_pEngineInstallButton->setText(pInstaller->installed()
+                    ? tr("Reinstall or update the engine")
+                    : tr("Install the engine"));
+    m_pEngineInstallButton->setEnabled(!busy && pInstaller->platformNotice().isEmpty());
+    m_pEngineCancelButton->setEnabled(busy);
+    m_pEngineRemoveButton->setEnabled(!busy && pInstaller->installed());
+    m_pEngineVariantComboBox->setEnabled(!busy);
+    m_pEngineModelComboBox->setEnabled(!busy);
+}
+
 void DlgPrefStems::slotUpdate() {
+    refreshEngine();
     StemGenerator* pGenerator = StemGenerator::instance();
     setControlsEnabled(pGenerator != nullptr);
     if (!pGenerator) {
@@ -249,6 +491,7 @@ void DlgPrefStems::slotUpdate() {
 void DlgPrefStems::slotShow() {
     refreshEnvironment();
     refreshQueue();
+    refreshEngine();
 }
 
 void DlgPrefStems::slotApply() {

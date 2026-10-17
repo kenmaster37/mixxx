@@ -23,6 +23,13 @@ class DlgPrefAi : public DlgPreferencePage, public Ui::DlgPrefAiDlg {
     void slotApply() override;
     void slotResetToDefaults() override;
 
+  signals:
+    /// The assistant was switched on or off, and whoever shows that state has to
+    /// be told: the Auto DJ view is often already open when this page is
+    /// applied, and it would otherwise keep the instruction box switched off
+    /// until it is left and entered again.
+    void settingsApplied();
+
   private slots:
     void slotProviderChanged(int index);
     void slotTestConnection();

@@ -49,6 +49,7 @@ class QmlLegacyLibraryItem : public QQuickPaintedItem {
     void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
     void componentComplete() override;
     void updatePolish() override;
+    void itemChange(ItemChange change, const ItemChangeData& value) override;
 
   private:
     void updateWidgetSize();

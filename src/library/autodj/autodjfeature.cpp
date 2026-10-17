@@ -204,6 +204,14 @@ void AutoDJFeature::activate() {
     emit enableCoverArtDisplay(true);
 }
 
+void AutoDJFeature::refreshAiAvailability() {
+    if (m_pAutoDJView == nullptr) {
+        return;
+    }
+    m_pAutoDJView->setAiMixAvailable(
+            mixxx::ai::AiMixSettings::fromUserSettings(*m_pConfig).enabled);
+}
+
 void AutoDJFeature::clear() {
     QMessageBox::StandardButton btn = QMessageBox::question(nullptr,
             tr("Confirmation Clear"),

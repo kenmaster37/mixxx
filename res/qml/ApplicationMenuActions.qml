@@ -54,6 +54,13 @@ Item {
 
     signal focusLibrarySearchRequested
 
+    // Read through a property, and guarded: on some Qt versions the
+    // Mixxx.Application singleton does not resolve to the Mixxx proxy (the log
+    // said "Property 'menuShortcut' of object QQuickApplication is not a
+    // function"), and then a single missing binding left every menu Action
+    // without its shortcut.
+    readonly property var proxy: Mixxx.Application
+
     function configuredMenuShortcut(command, defaultShortcut, revision) {
         // While the user is typing, no shortcut may be armed: Qt resolves them
         // before the key reaches the focused item, so a key that is also a
@@ -61,10 +68,17 @@ Item {
         // "Maximize Library". Qt registers the shortcut of the Action as well as
         // the one of the Shortcut objects of the skins, so it is cleared here,
         // in the single place where all of them are set.
-        if (Mixxx.Application.textInputFocused) {
+        if (root.proxy && root.proxy.textInputFocused) {
             return "";
         }
-        return Mixxx.Application.menuShortcut(command, defaultShortcut);
+        // Without a working proxy there is no way to know whether a text input
+        // has the focus, and arming the shortcut anyway would swallow the key
+        // being typed (the Space of "Maximize Library" inside the AutoDJ AI
+        // box). So when in doubt, no shortcut at all.
+        if (!root.proxy || !root.proxy.menuShortcut) {
+            return "";
+        }
+        return root.proxy.menuShortcut(command, defaultShortcut);
     }
 
     Connections {
@@ -72,7 +86,7 @@ Item {
             root.shortcutRevision += 1;
         }
 
-        target: Mixxx.Application
+        target: root.proxy
     }
     Action {
         id: fileLoadDeck1Action

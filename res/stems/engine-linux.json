@@ -1,0 +1,235 @@
+{
+  "engine_version": "0.1.0",
+  "protocol": 1,
+  "generated_by": "tools/make_manifest.py",
+  "target": {
+    "platform": "manylinux_2_28_x86_64",
+    "platform_tags": [
+      "manylinux_2_28_x86_64",
+      "manylinux2014_x86_64"
+    ],
+    "python_version": "3.11",
+    "implementation": "cp"
+  },
+  "runtime": {
+    "name": "cpython-3.11.17+20261013-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "version": "",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.11.17+20261013-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "sha256": "846bf682e2b67393f2affa5e5c0994e446abc3a7cc5bb699890c36346823644c",
+    "size": 48930886,
+    "kind": "runtime",
+    "unpack_to": "runtime",
+    "strip_prefix": "python"
+  },
+  "common": [
+    {
+      "name": "demucs-onnx",
+      "version": "0.3.4",
+      "url": "https://files.pythonhosted.org/packages/6b/ef/127da31f43c527c4c24a80770b93c8a6b340f97a8f2a118829f4ad54a6b8/demucs_onnx-0.3.4-py3-none-any.whl",
+      "sha256": "9232ad4ca4d5ebf150bb7a884bb1565602f7d4c8065aac9fc616df3126c294a6",
+      "size": 58748,
+      "kind": "wheel"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.6",
+      "url": "https://files.pythonhosted.org/packages/02/03/74fe2a4cb3817d94d86402f2506554130a2f01414e299b5a843e5a8a957f/numpy-2.4.6-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "89cd468399cfd2504718f0ba50e410dca55a170b61a02ad92bb18c8a65186e93",
+      "size": 16918164,
+      "kind": "wheel"
+    },
+    {
+      "name": "soundfile",
+      "version": "0.14.0",
+      "url": "https://files.pythonhosted.org/packages/7b/a2/70fd4432b924684c372df8b0a45708c36c057ef3596c9eb53e0a806b980b/soundfile-0.14.0-py2.py3-none-manylinux_2_28_x86_64.whl",
+      "sha256": "1e38bac1853412871318e82a1ba69a8be677619b56025bbfcccdb41b6cafe82d",
+      "size": 1315963,
+      "kind": "wheel"
+    },
+    {
+      "name": "soxr",
+      "version": "1.1.0",
+      "url": "https://files.pythonhosted.org/packages/86/47/d5964551ca818b7f0c7ef7f3899056263b60ef098a801066350a9672ca8f/soxr-1.1.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "3da87e3ffa3e41823d873b051c7ecb2acebd8d1b6b46b752f5facf10a0d84ab9",
+      "size": 245268,
+      "kind": "wheel"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1",
+      "url": "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl",
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73",
+      "size": 80199,
+      "kind": "wheel"
+    },
+    {
+      "name": "imageio-ffmpeg",
+      "version": "0.6.0",
+      "url": "https://files.pythonhosted.org/packages/a0/2d/43c8522a2038e9d0e7dbdf3a61195ecc31ca576fb1527a528c877e87d973/imageio_ffmpeg-0.6.0-py3-none-manylinux2014_x86_64.whl",
+      "sha256": "c7e46fcec401dd990405049d2e2f475e2b397779df2519b544b8aab515195282",
+      "size": 29498237,
+      "kind": "wheel"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1",
+      "url": "https://files.pythonhosted.org/packages/f7/a4/4399daaf8f7dfee9d7c3327fdb0426ee041cc63edc358b93911ceb2bfc7a/cffi-2.1.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "34e261f78cb6ceaaa36f42f2613f4380d94d9c759a9c73c769ee6e0247364632",
+      "size": 217807,
+      "kind": "wheel"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "size": 129956,
+      "kind": "wheel"
+    },
+    {
+      "name": "protobuf",
+      "version": "7.36.2",
+      "url": "https://files.pythonhosted.org/packages/db/f3/3996583dd2906297a637af12114deddf7658af6e683fedb83be061983fb5/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl",
+      "sha256": "89f23aa53c24553a2416fd4fd1ec06f74fa42b14b546d8883128813f775bbfd2",
+      "size": 343223,
+      "kind": "wheel"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "size": 45571,
+      "kind": "wheel"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "url": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "size": 25335,
+      "kind": "wheel"
+    },
+    {
+      "name": "flatbuffers",
+      "version": "25.12.19",
+      "url": "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+      "size": 26661,
+      "kind": "wheel"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.11",
+      "url": "https://files.pythonhosted.org/packages/90/11/0e6f11117525ff0eec40ebac3d313376f102df93ca44ad9e893ee85e4f89/pycparser-3.11-py3-none-any.whl",
+      "sha256": "51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80",
+      "size": 51178,
+      "kind": "wheel"
+    }
+  ],
+  "compute": {
+    "cpu": {
+      "label": "This computer only (CPU)",
+      "items": [],
+      "size": 0
+    },
+    "nvidia": {
+      "label": "NVIDIA graphics card (CUDA)",
+      "items": [
+        {
+          "name": "onnxruntime-gpu",
+          "version": "1.26.0",
+          "url": "https://files.pythonhosted.org/packages/dc/0f/696b4f94a282952239ffed39db78cb17a00ad993acd929cfac010a09759b/onnxruntime_gpu-1.26.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "sha256": "4fa231294c2643911d2a7d16469c4808b0bdcdc4b5f4063d3a53744ce25b683a",
+          "size": 276956564,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-cudnn-cu12",
+          "version": "9.5.1.17",
+          "url": "https://files.pythonhosted.org/packages/2a/78/4535c9c7f859a64781e43c969a3a7e84c54634e319a996d43ef32ce46f83/nvidia_cudnn_cu12-9.5.1.17-py3-none-manylinux_2_28_x86_64.whl",
+          "sha256": "30ac3869f6db17d170e0e556dd6cc5eee02647abc31ca856634d5a40f82c15b2",
+          "size": 570988386,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-cublas-cu12",
+          "version": "12.6.4.1",
+          "url": "https://files.pythonhosted.org/packages/af/eb/ff4b8c503fa1f1796679dce648854d58751982426e4e4b37d6fce49d259c/nvidia_cublas_cu12-12.6.4.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "sha256": "08ed2686e9875d01b58e3cb379c6896df8e76c75e0d4a7f7dace3d7b6d9ef8eb",
+          "size": 393138322,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-cufft-cu12",
+          "version": "11.4.1.4",
+          "url": "https://files.pythonhosted.org/packages/95/f4/61e6996dd20481ee834f57a8e9dca28b1869366a135e0d42e2aa8493bdd4/nvidia_cufft_cu12-11.4.1.4-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "sha256": "c67884f2a7d276b4b80eb56a79322a95df592ae5e765cf1243693365ccab4e28",
+          "size": 200877592,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-curand-cu12",
+          "version": "10.3.7.77",
+          "url": "https://files.pythonhosted.org/packages/4a/aa/2c7ff0b5ee02eaef890c0ce7d4f74bc30901871c5e45dee1ae6d0083cd80/nvidia_curand_cu12-10.3.7.77-py3-none-manylinux2014_x86_64.whl",
+          "sha256": "99f1a32f1ac2bd134897fc7a203f779303261268a65762a623bf30cc9fe79117",
+          "size": 56279000,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-cuda-runtime-cu12",
+          "version": "12.9.79",
+          "url": "https://files.pythonhosted.org/packages/bc/46/a92db19b8309581092a3add7e6fceb4c301a3fd233969856a8cbf042cd3c/nvidia_cuda_runtime_cu12-12.9.79-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "sha256": "25bba2dfb01d48a9b59ca474a1ac43c6ebf7011f1b0b8cc44f54eb6ac48a96c3",
+          "size": 3493179,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-cuda-nvrtc-cu12",
+          "version": "12.9.86",
+          "url": "https://files.pythonhosted.org/packages/b8/85/e4af82cc9202023862090bfca4ea827d533329e925c758f0cde964cb54b7/nvidia_cuda_nvrtc_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+          "sha256": "210cf05005a447e29214e9ce50851e83fc5f4358df8b453155d5e1918094dcb4",
+          "size": 89568129,
+          "kind": "wheel"
+        },
+        {
+          "name": "nvidia-nvjitlink-cu12",
+          "version": "12.9.86",
+          "url": "https://files.pythonhosted.org/packages/46/0c/c75bbfb967457a0b7670b8ad267bfc4fffdf341c074e0a80db06c24ccfd4/nvidia_nvjitlink_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+          "sha256": "e3f1171dbdc83c5932a45f0f4c99180a70de9bd2718c1ab77d14104f6d7147f9",
+          "size": 39748338,
+          "kind": "wheel"
+        }
+      ],
+      "size": 1631049510
+    }
+  },
+  "models": {
+    "htdemucs": {
+      "label": "htdemucs (fp32 weights, best fidelity)",
+      "version": "d54ed9eb60e2",
+      "url": "https://huggingface.co/StemSplitio/htdemucs-onnx/resolve/main/htdemucs.onnx",
+      "sha256": "68d0bf16428ef66e692cdff8a9ccf28f1ef3f69440d57e58605a4cc55fcc5e74",
+      "size": 316446953,
+      "filename": "htdemucs.onnx"
+    },
+    "htdemucs_fp16weights": {
+      "label": "htdemucs (fp16 weights, half the download)",
+      "version": "d54ed9eb60e2",
+      "url": "https://huggingface.co/StemSplitio/htdemucs-onnx/resolve/main/htdemucs_fp16weights.onnx",
+      "sha256": "d05c269d0178d2a72ad484b10b11dd370193fc923201c3b27a99f848745db70a",
+      "size": 165612636,
+      "filename": "htdemucs_fp16weights.onnx"
+    }
+  },
+  "totals": {
+    "cpu": {
+      "htdemucs": 414334149,
+      "htdemucs_fp16weights": 263499832
+    },
+    "nvidia": {
+      "htdemucs": 2045383659,
+      "htdemucs_fp16weights": 1894549342
+    }
+  }
+}

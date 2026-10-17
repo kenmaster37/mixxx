@@ -28,6 +28,72 @@ Category {
         root.dirty = true;
     }
 
+    // The installer for the engine that carries its own interpreter. It belongs
+    // to StemGenerator and keeps its own state, so the choices below are pushed
+    // into it and read back from it instead of being duplicated here.
+    readonly property var engine: Mixxx.Core.stemGenerator.engine
+
+    function engineVariantSize() {
+        const list = engine.variants;
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i].key === engine.variant) {
+                return list[i].sizeText;
+            }
+        }
+        return "";
+    }
+
+    function engineModelSize() {
+        const list = engine.models;
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i].key === engine.model) {
+                return list[i].sizeText;
+            }
+        }
+        return "";
+    }
+
+    function engineItemStateText(state) {
+        if (state === "downloading") {
+            return "downloading";
+        }
+        if (state === "done") {
+            return "ready";
+        }
+        if (state === "failed") {
+            return "failed";
+        }
+        return "";
+    }
+
+    function engineStateText() {
+        if (engine.platformNotice !== "") {
+            return engine.platformNotice;
+        }
+        if (engine.busy) {
+            return engine.statusText;
+        }
+        if (engine.state === "failed") {
+            return engine.errorText;
+        }
+        if (engine.state === "outdated") {
+            return "The installed engine is not the one this Mixxx expects. Installing it again brings it up to date.";
+        }
+        if (engine.state === "ready") {
+            return engine.statusText;
+        }
+        return "Not installed. Separating a track needs this engine, or a Python of your own with the libraries installed (see below).";
+    }
+
+    // RatioChoice loses a binding on its `selected` as soon as it is clicked, so
+    // the values are written here and this runs whenever the installer changes
+    // them on its own, which is what happens when the graphics card answers
+    // after the window is already open.
+    function syncEngineInputs() {
+        engineVariantInput.selected = engine.variant === "nvidia" ? "NVIDIA" : "CPU";
+        engineModelInput.selected = engine.model === "htdemucs" ? "fp32" : "fp16";
+    }
+
     function load() {
         stemsEnabled = Mixxx.Core.stemGenerator.enabled;
         writeNextToTrack = Mixxx.Core.stemGenerator.writeNextToTrack;
@@ -38,6 +104,8 @@ Category {
         modelIndex = Math.max(0, models.indexOf(Mixxx.Core.stemGenerator.model));
         providerIndex = Math.max(0, providers.indexOf(Mixxx.Core.stemGenerator.provider));
         Mixxx.Core.stemGenerator.probe();
+        Mixxx.Core.stemGenerator.engine.refresh();
+        syncEngineInputs();
     }
 
     function save() {
@@ -110,6 +178,197 @@ Category {
             text: "The worker needs a Python interpreter with demucs-onnx and onnxruntime-gpu installed, plus ffmpeg. Example:\n    python -m venv <folder>\\venv\n    <folder>\\venv\\Scripts\\pip install demucs-onnx onnxruntime-gpu\n    <folder>\\venv\\Scripts\\pip install nvidia-cublas nvidia-cuda-runtime nvidia-cuda-nvrtc nvidia-cufft nvidia-nvjitlink nvidia-cudnn-cu13\n    then set that interpreter below."
             visible: Mixxx.Core.stemGenerator.probeErrors.length > 0
             wrapMode: Text.WordWrap
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Theme.darkGray3
+        }
+
+        // --- engine -----------------------------------------------------------
+        Text {
+            Layout.fillWidth: true
+            color: Theme.white
+            font.pixelSize: 14
+            font.weight: Font.DemiBold
+            text: "Engine"
+        }
+        Text {
+            Layout.fillWidth: true
+            color: Theme.midGray
+            text: "The engine carries its own interpreter, its own libraries and its own model, so separating a track does not ask for anything to be installed on this computer. It is downloaded once into the folder below and can be removed at any time; nothing outside that folder is touched."
+            wrapMode: Text.WordWrap
+        }
+        Text {
+            Layout.fillWidth: true
+            color: Mixxx.Core.stemGenerator.engine.gpuSuggested ? "#7bd88f" : Theme.midGray
+            text: Mixxx.Core.stemGenerator.engine.gpuSuggested
+                  ? "Graphics card found: " + Mixxx.Core.stemGenerator.engine.gpuName + ", so the CUDA build is offered by default."
+                  : "No NVIDIA graphics card found, so the processor is what this computer can use."
+            wrapMode: Text.WordWrap
+        }
+        RowLayout {
+            Layout.fillWidth: true
+
+            Text {
+                Layout.preferredWidth: 220
+                color: Theme.white
+                text: "Processor"
+            }
+            Setting.RatioChoice {
+                id: engineVariantInput
+
+                options: ["CPU", "NVIDIA"]
+
+                onSelectedChanged: {
+                    const key = engineVariantInput.selected === "NVIDIA" ? "nvidia" : "cpu";
+                    if (root.engine.variant !== key) {
+                        root.engine.variant = key;
+                    }
+                }
+            }
+            Text {
+                Layout.leftMargin: 12
+                color: Theme.midGray
+                text: root.engineVariantSize()
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+        }
+        RowLayout {
+            Layout.fillWidth: true
+
+            Text {
+                Layout.preferredWidth: 220
+                color: Theme.white
+                text: "Model quality"
+            }
+            Setting.RatioChoice {
+                id: engineModelInput
+
+                options: ["fp16", "fp32"]
+
+                onSelectedChanged: {
+                    const key = engineModelInput.selected === "fp32" ? "htdemucs" : "htdemucs_fp16weights";
+                    if (root.engine.model !== key) {
+                        root.engine.model = key;
+                    }
+                }
+            }
+            Text {
+                Layout.leftMargin: 12
+                color: Theme.midGray
+                text: root.engineModelSize()
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+        }
+        Text {
+            Layout.fillWidth: true
+            color: Theme.white
+            text: "To download: " + Mixxx.Core.stemGenerator.engine.items.length + " files, "
+                  + Mixxx.Core.stemGenerator.engine.totalSizeText + "."
+            visible: Mixxx.Core.stemGenerator.engine.items.length > 0
+            wrapMode: Text.WordWrap
+        }
+        ListView {
+            id: engineList
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: 150
+            clip: true
+            model: Mixxx.Core.stemGenerator.engine.items
+            spacing: 2
+
+            delegate: Rectangle {
+                required property int index
+                required property string label
+                required property string sizeText
+                required property string state
+
+                color: index % 2 === 0 ? Theme.darkGray4 : Theme.darkGray2
+                height: 24
+                width: engineList.width
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 6
+                    anchors.rightMargin: 6
+                    spacing: 8
+
+                    Text {
+                        Layout.fillWidth: true
+                        color: Theme.white
+                        elide: Text.ElideRight
+                        text: label
+                    }
+                    Text {
+                        color: Theme.midGray
+                        text: sizeText
+                    }
+                    Text {
+                        color: state === "failed" ? "#ff8a80" : Theme.midGray
+                        text: root.engineItemStateText(state)
+                    }
+                }
+            }
+        }
+        ProgressBar {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 8
+            from: 0
+            to: 100
+            value: Mixxx.Core.stemGenerator.engine.progress
+            visible: Mixxx.Core.stemGenerator.engine.busy
+        }
+        Text {
+            Layout.fillWidth: true
+            color: Mixxx.Core.stemGenerator.engine.state === "failed" ? "#ff8a80" : Theme.white
+            text: root.engineStateText()
+            wrapMode: Text.WordWrap
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+
+            FormButton {
+                text: Mixxx.Core.stemGenerator.engine.installed
+                      ? "Reinstall or update the engine" : "Install the engine"
+                enabled: !Mixxx.Core.stemGenerator.engine.busy
+                         && Mixxx.Core.stemGenerator.engine.platformNotice === ""
+
+                onClicked: Mixxx.Core.stemGenerator.engine.install()
+            }
+            FormButton {
+                text: "Cancel"
+                enabled: Mixxx.Core.stemGenerator.engine.busy
+
+                onClicked: Mixxx.Core.stemGenerator.engine.cancel()
+            }
+            FormButton {
+                text: "Remove the engine"
+                enabled: !Mixxx.Core.stemGenerator.engine.busy
+                         && Mixxx.Core.stemGenerator.engine.installed
+
+                onClicked: Mixxx.Core.stemGenerator.engine.removeEngine()
+            }
+            FormButton {
+                text: "Open the engine folder"
+
+                onClicked: Mixxx.Core.stemGenerator.engine.openEngineFolder()
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Theme.darkGray3
         }
 
         RowLayout {
@@ -366,6 +625,14 @@ Category {
 
                 onClicked: Mixxx.Core.stemGenerator.cancel()
             }
+        }
+    }
+
+    Connections {
+        target: Mixxx.Core.stemGenerator.engine
+
+        function onSelectionChanged() {
+            root.syncEngineInputs();
         }
     }
 }

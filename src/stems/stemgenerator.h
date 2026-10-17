@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
@@ -21,6 +22,8 @@
 class QJSEngine;
 class QQmlEngine;
 #endif
+
+class StemEngineInstaller;
 
 namespace mixxx {
 class CoreServices;
@@ -71,6 +74,7 @@ class StemGenerator : public QObject {
     Q_PROPERTY(int pendingCount READ pendingCount NOTIFY queueChanged)
     Q_PROPERTY(QString queueStatus READ queueStatus NOTIFY queueChanged)
     Q_PROPERTY(QAbstractItemModel* queue READ queue CONSTANT)
+    Q_PROPERTY(QObject* engine READ engine CONSTANT)
 
   public:
     explicit StemGenerator(UserSettingsPointer pConfig, QObject* pParent = nullptr);
@@ -133,6 +137,12 @@ class StemGenerator : public QObject {
     QAbstractItemModel* queue() {
         return &m_queue;
     }
+    /// The installer for the engine that carries its own interpreter, exposed
+    /// so the settings page can offer it. Never null. Not inline: the header
+    /// only declares the class, and the conversion to QObject needs it complete.
+    QObject* engine();
+    /// The same object, with its type: the widgets page calls into it.
+    StemEngineInstaller* engineInstaller();
 
     /// Runs the worker with ``probe`` and updates the capability properties.
     Q_INVOKABLE void probe();
@@ -178,16 +188,19 @@ class StemGenerator : public QObject {
     void startNextJob();
     void failCurrentJob(const QString& error);
     QString resolvedPython() const;
+    QString resolvedFfmpeg() const;
     QString resolvedWorkerScript() const;
     QString outputPathForSource(const QString& sourcePath) const;
     QString cachePathForSource(const QString& sourcePath) const;
     QStringList workerEnvironmentValue() const;
+    QProcessEnvironment workerEnvironment() const;
     bool isAnyDeckPlaying() const;
     static QString displayTitleForTrack(const QString& trackPath);
 
     UserSettingsPointer m_pConfig;
     mixxx::CoreServices* m_pCoreServices{nullptr};
     StemQueueModel m_queue;
+    StemEngineInstaller* m_pEngine{nullptr};
     QProcess m_worker;
     QTimer m_startTimer;
 

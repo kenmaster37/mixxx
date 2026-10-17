@@ -16,9 +16,10 @@
 #include "coreservices.h"
 #include "library/trackcollectionmanager.h"
 #include "mixer/playermanager.h"
+#include "stems/stemengineinstaller.h"
 #include "track/track.h"
 #include "track/trackref.h"
-#include "util/cmdlineargs.h"
+
 #include "util/logger.h"
 
 #if defined(MIXXX_USE_QML)
@@ -66,6 +67,8 @@ QString findPythonIn(const QString& directory) {
 StemGenerator::StemGenerator(UserSettingsPointer pConfig, QObject* pParent)
         : QObject(pParent),
           m_pConfig(std::move(pConfig)) {
+    m_pEngine = new StemEngineInstaller(m_pConfig, this);
+
     m_startTimer.setSingleShot(true);
     connect(&m_startTimer, &QTimer::timeout, this, &StemGenerator::slotStartNextJob);
 
@@ -280,6 +283,13 @@ QString StemGenerator::queueStatus() const {
 }
 
 QString StemGenerator::resolvedPython() const {
+    // An installed engine comes first: its interpreter is the one that was set
+    // up for this application, and asking for it here is what makes the path
+    // below a fallback instead of the only way in.
+    const QString engine = StemEngineInstaller::pythonFor(m_pConfig);
+    if (!engine.isEmpty()) {
+        return engine;
+    }
     const QString configured = pythonPath();
     if (!configured.isEmpty() && QFileInfo::exists(configured)) {
         return configured;
@@ -297,22 +307,71 @@ QString StemGenerator::resolvedPython() const {
     return QStringLiteral("python");
 }
 
+QObject* StemGenerator::engine() {
+    return m_pEngine;
+}
+
+StemEngineInstaller* StemGenerator::engineInstaller() {
+    return m_pEngine;
+}
+
+QString StemGenerator::resolvedFfmpeg() const {
+    const QString configured = ffmpegPath();
+    // An empty or default setting means "whatever is on PATH". When the engine
+    // is installed it brought its own encoder, and a machine with the engine
+    // installed is not required to have ffmpeg at all, so that one is used
+    // unless the user picked a different program on purpose.
+    if (configured.isEmpty() || configured == QStringLiteral("ffmpeg")) {
+        const QString engineFfmpeg = StemEngineInstaller::ffmpegFor(m_pConfig);
+        if (!engineFfmpeg.isEmpty()) {
+            return engineFfmpeg;
+        }
+    }
+    // A path that is not there is the worst thing to pass on: the worker only
+    // finds out minutes later, when the separation is done and the container
+    // has to be written, and all it can say is that the system cannot find the
+    // file. A bare name is left alone, it is meant to be looked up on PATH.
+    if (configured.contains(QLatin1Char('/')) || configured.contains(QLatin1Char('\\'))) {
+        const QString absolute = QFileInfo(configured).absoluteFilePath();
+        if (!QFileInfo::exists(absolute)) {
+            kLogger.warning() << "The ffmpeg in the stem settings does not exist:"
+                              << configured;
+            return QStringLiteral("ffmpeg");
+        }
+        return absolute;
+    }
+    return configured;
+}
+
 QString StemGenerator::resolvedWorkerScript() const {
-    const QDir resourceDir(CmdlineArgs::Instance().getResourcePath());
+    QStringList candidates;
+    // The worker belongs to this build: it speaks a line protocol with the
+    // binary that spawned it and it is copied into the engine at install time,
+    // so the copy shipped with the application is the one to run. An engine
+    // installed by an older Mixxx keeps an older copy of the same file, and
+    // taking that one would mean a fixed worker could only reach the user by
+    // downloading 240 MB of runtime again.
+    const QDir resourceDir(m_pConfig->getResourcePath());
     const QDir appDir(QCoreApplication::applicationDirPath());
     const QDir settingsDir(m_pConfig->getSettingsPath());
+
+    candidates << resourceDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py"))
+               << resourceDir.absoluteFilePath(QStringLiteral("../res/stems/stems_worker.py"))
+               << appDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py"))
+               << appDir.absoluteFilePath(QStringLiteral("../res/stems/stems_worker.py"))
+               << appDir.absoluteFilePath(QStringLiteral("../../res/stems/stems_worker.py"))
+               << appDir.absoluteFilePath(QStringLiteral("../share/mixxx/stems/stems_worker.py"));
     // Besides the resource directory there are two other layouts to cover: a
     // development tree runs the binary from its build directory, and a Linux
     // package installs the scripts under the data directory, so the resource
     // path on its own does not always lead to the worker.
-    const QStringList candidates = {
-            resourceDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py")),
-            resourceDir.absoluteFilePath(QStringLiteral("../res/stems/stems_worker.py")),
-            appDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py")),
-            appDir.absoluteFilePath(QStringLiteral("../res/stems/stems_worker.py")),
-            appDir.absoluteFilePath(QStringLiteral("../share/mixxx/stems/stems_worker.py")),
-            settingsDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py")),
-    };
+    const QString engineFolder = StemEngineInstaller::folderFor(m_pConfig);
+    const QString engineWorker = QDir(engineFolder).absoluteFilePath(
+            QStringLiteral("app/stems_worker.py"));
+    if (!engineFolder.isEmpty() && QFileInfo::exists(engineWorker)) {
+        candidates << engineWorker;
+    }
+    candidates << settingsDir.absoluteFilePath(QStringLiteral("stems/stems_worker.py"));
     for (const QString& candidate : candidates) {
         if (QFileInfo::exists(candidate)) {
             return QFileInfo(candidate).absoluteFilePath();
@@ -328,6 +387,15 @@ QStringList StemGenerator::workerEnvironmentValue() const {
     const QFileInfo pythonInfo(resolvedPython());
     const QDir venvRoot(pythonInfo.absolutePath() + QStringLiteral("/.."));
     QStringList sitePackages;
+    // The engine keeps its libraries in a folder of its own instead of in a
+    // layout that follows the interpreter, so it is added by name. Without it
+    // the CUDA libraries those wheels carry are not found and the separation
+    // quietly falls back to the processor.
+    const QString engineSitePackages = QDir(StemEngineInstaller::folderFor(m_pConfig))
+                                               .absoluteFilePath(QStringLiteral("site-packages"));
+    if (QDir(engineSitePackages).exists()) {
+        sitePackages << engineSitePackages;
+    }
     for (const QString& relative : {QStringLiteral("Lib/site-packages"),
                  QStringLiteral("lib/site-packages")}) {
         const QString path = venvRoot.absoluteFilePath(relative);
@@ -372,6 +440,62 @@ QStringList StemGenerator::workerEnvironmentValue() const {
         values << currentPath;
     }
     return values;
+}
+
+QProcessEnvironment StemGenerator::workerEnvironment() const {
+    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    const QStringList paths = workerEnvironmentValue();
+    if (!paths.isEmpty()) {
+        environment.insert(QStringLiteral("PATH"), paths.join(QLatin1Char(';')));
+    }
+    // Keep the progress lines readable even on a non English Windows.
+    environment.insert(QStringLiteral("PYTHONIOENCODING"), QStringLiteral("utf-8"));
+    environment.insert(QStringLiteral("PYTHONUNBUFFERED"), QStringLiteral("1"));
+    // The worker ships with the application and is also copied into the engine,
+    // so it can be run from either place. It asks this folder for the models
+    // instead of working out where it is, or an engine installed elsewhere
+    // would look for them next to the application and find nothing.
+    const QDir engineDir(StemEngineInstaller::folderFor(m_pConfig));
+    const QString models = engineDir.absoluteFilePath(QStringLiteral("models"));
+    if (QDir(models).exists()) {
+        environment.insert(QStringLiteral("STEM_ENGINE_MODELS"), QDir::toNativeSeparators(models));
+    }
+    // Windows gets an interpreter whose ._pth points at the engine's libraries,
+    // because the embedded distribution reads it by itself. There is no such
+    // file on Linux, where the interpreter comes from python-build-standalone,
+    // so the same directory is handed over as a search path. Harmless on
+    // Windows: it is the folder the ._pth already names.
+    const QString sitePackages = engineDir.absoluteFilePath(QStringLiteral("site-packages"));
+    if (QDir(sitePackages).exists()) {
+        environment.insert(QStringLiteral("PYTHONPATH"),
+                QDir::toNativeSeparators(sitePackages));
+    }
+#ifndef Q_OS_WIN
+    // The CUDA libraries travel inside the wheels, under nvidia/<package>/lib,
+    // and the loader on Linux only looks where LD_LIBRARY_PATH says. On Windows
+    // the same folders go on PATH instead, which is what the list above is for.
+    const QDir nvidiaDir(sitePackages + QStringLiteral("/nvidia"));
+    if (nvidiaDir.exists()) {
+        QStringList libraries;
+        for (const QString& package : nvidiaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            for (const QString& relative : {QStringLiteral("lib"), QStringLiteral("lib/x86_64")}) {
+                const QString path = nvidiaDir.absoluteFilePath(package + QLatin1Char('/') + relative);
+                if (QDir(path).exists()) {
+                    libraries << path;
+                }
+            }
+        }
+        if (!libraries.isEmpty()) {
+            const QString current = environment.value(QStringLiteral("LD_LIBRARY_PATH"));
+            if (!current.isEmpty()) {
+                libraries << current;
+            }
+            environment.insert(QStringLiteral("LD_LIBRARY_PATH"),
+                    libraries.join(QLatin1Char(':')));
+        }
+    }
+#endif
+    return environment;
 }
 
 // ------------------------------------------------------------------ helpers --
@@ -585,20 +709,14 @@ void StemGenerator::startNextJob() {
             QStringLiteral("--model"),
             model(),
             QStringLiteral("--ffmpeg"),
-            ffmpegPath()});
-    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-    const QStringList paths = workerEnvironmentValue();
-    if (!paths.isEmpty()) {
-        environment.insert(QStringLiteral("PATH"), paths.join(QLatin1Char(';')));
-    }
-    // Keep the progress lines readable even on a non English Windows.
-    environment.insert(QStringLiteral("PYTHONIOENCODING"), QStringLiteral("utf-8"));
-    environment.insert(QStringLiteral("PYTHONUNBUFFERED"), QStringLiteral("1"));
-    m_worker.setProcessEnvironment(environment);
+            resolvedFfmpeg()});
+    m_worker.setProcessEnvironment(workerEnvironment());
     m_worker.setWorkingDirectory(QFileInfo(script).absolutePath());
     m_queueStatus = QStringLiteral("Generando \"%1\"").arg(job.title);
+    // The whole command line, so a job that fails at the very end can be
+    // reproduced by hand without guessing what was passed on.
     kLogger.info() << "Generating stems for" << job.sourcePath << "->" << job.outputPath
-                   << "with" << python << "provider" << provider();
+                   << "with" << python << m_worker.arguments();
     emit queueChanged();
     emit busyChanged();
     m_worker.start();
@@ -693,6 +811,9 @@ void StemGenerator::slotWorkerFinished(int exitCode, QProcess::ExitStatus exitSt
                 QFileInfo(job.outputPath).absolutePath() ==
                         QFileInfo(job.sourcePath).absolutePath()) {
             // The stem file sits next to the track, so the library has to see it.
+            // It shows up as a second row, on purpose: that is how the user knows
+            // the conversion happened. Hiding the stem files from the scan is
+            // planned for a later version.
             rescanLibrary();
         }
     } else {
@@ -727,7 +848,7 @@ void StemGenerator::failCurrentJob(const QString& error) {
 
 void StemGenerator::probe() {
     kLogger.info() << "Stem settings: enabled" << enabled() << "interpreter" << resolvedPython()
-                   << "ffmpeg" << ffmpegPath() << "cache" << cacheDirectory();
+                   << "ffmpeg" << resolvedFfmpeg() << "cache" << cacheDirectory();
     if (m_worker.state() != QProcess::NotRunning) {
         return;
     }
@@ -746,15 +867,8 @@ void StemGenerator::probe() {
     m_worker.setArguments({script,
             QStringLiteral("probe"),
             QStringLiteral("--ffmpeg"),
-            ffmpegPath()});
-    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-    const QStringList paths = workerEnvironmentValue();
-    if (!paths.isEmpty()) {
-        environment.insert(QStringLiteral("PATH"), paths.join(QLatin1Char(';')));
-    }
-    environment.insert(QStringLiteral("PYTHONIOENCODING"), QStringLiteral("utf-8"));
-    environment.insert(QStringLiteral("PYTHONUNBUFFERED"), QStringLiteral("1"));
-    m_worker.setProcessEnvironment(environment);
+            resolvedFfmpeg()});
+    m_worker.setProcessEnvironment(workerEnvironment());
     m_worker.setWorkingDirectory(QFileInfo(script).absolutePath());
     m_worker.start();
 }

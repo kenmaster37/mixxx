@@ -128,11 +128,13 @@ void DlgPrefAi::slotApply() {
     settings.writeToUserSettings(m_pConfig.data());
 
     if (!mixxx::ai::isApiKeyStorageAvailable()) {
+        emit settingsApplied();
         return;
     }
     // An empty field means "no key": the keychain entry is removed then.
     writeStoredApiKey(AiMixSettings::providerId(settings.provider),
             AiApiKeyLineEdit->text().trimmed());
+    emit settingsApplied();
 }
 
 void DlgPrefAi::slotResetToDefaults() {

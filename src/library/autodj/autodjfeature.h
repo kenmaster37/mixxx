@@ -60,6 +60,11 @@ class AutoDJFeature : public LibraryFeature {
   public slots:
     void activate() override;
 
+    /// Tells the Auto DJ view that the assistant was switched on or off, so the
+    /// instruction box follows the setting without having to visit the view
+    /// again. Called when the AI preferences are applied.
+    void refreshAiAvailability();
+
     void onRightClick(const QPoint& globalPos) override;
     // Temporary, until WCrateTableView can be written.
     void onRightClickChild(const QPoint& globalPos, const QModelIndex& index) override;

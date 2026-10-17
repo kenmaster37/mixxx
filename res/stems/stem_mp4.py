@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
 import struct
 import subprocess
 import sys
@@ -225,27 +224,48 @@ def read_metadata(path: str, ffmpeg: str = "ffmpeg") -> dict[str, str]:
     The muxed audio of a stem file is the mix the separator wrote, a plain WAV
     without tags, so the artist and title have to be taken from the file the
     user picked.
+
+    Asked of ffmpeg rather than of ffprobe: an installed engine carries one
+    encoder and no second program, which would be another eighty megabytes for
+    a single query. Asking for a ``ffprobe`` that is not there used to make the
+    whole job fail at the end, with nothing but the operating system saying it
+    cannot find the file. The ``ffmetadata`` output is the same list of tags in
+    plain ``key=value`` form, so the parsing stays as simple.
+
+    Only best effort: a file whose tags cannot be read is still worth
+    separating, and returning nothing just means the stem file keeps no tags.
     """
-    ffprobe = os.path.join(os.path.dirname(ffmpeg), "ffprobe.exe")
-    if not os.path.isfile(ffprobe):
-        ffprobe = os.path.join(os.path.dirname(ffmpeg), "ffprobe")
-    if not os.path.isfile(ffprobe):
-        ffprobe = shutil.which("ffprobe") or "ffprobe"
-    result = subprocess.run(
-        [ffprobe, "-v", "error", "-show_entries", "format_tags",
-         "-of", "default=noprint_wrappers=1", path],
-        capture_output=True, text=True)
-    if result.returncode != 0:
+    try:
+        result = subprocess.run(
+            [ffmpeg, "-v", "error", "-i", path, "-f", "ffmetadata", "-"],
+            capture_output=True, text=True)
+    except OSError:
+        # A program that cannot be started at all: the separation is already
+        # done, so the tags are the last thing worth losing a job over.
         return {}
     tags: dict[str, str] = {}
     for line in result.stdout.splitlines():
+        if not line or line.startswith((";", "#")):
+            continue
         key, separator, value = line.partition("=")
         if not separator:
             continue
-        key = key.removeprefix("TAG:").strip().lower()
+        key = key.strip().lower()
         if key in TAGGED_KEYS and value:
-            tags[key] = value
+            tags[key] = _unescape_ffmetadata(value)
     return tags
+
+
+def _unescape_ffmetadata(value: str) -> str:
+    """Undo the escaping of an ffmetadata value: ``\\=`` and ``\\\\``."""
+    out: list[str] = []
+    index = 0
+    while index < len(value):
+        if value[index] == "\\" and index + 1 < len(value):
+            index += 1
+        out.append(value[index])
+        index += 1
+    return "".join(out)
 
 
 def write_stem_mp4(
