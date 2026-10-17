@@ -71,6 +71,59 @@ QFileInfo findMappingFile(const QString& pathOrFilename, const QStringList& path
 // kept for backwards compatibility.
 const QString kSettingsGroup = QLatin1String("[ControllerPreset]");
 
+/// The device name without spaces, case or punctuation, so that "MixTrack Pro II"
+/// and "mixtrack pro ii" compare equal.
+QString normalizedDeviceName(const QString& name) {
+    QString normalized;
+    normalized.reserve(name.size());
+    for (const QChar ch : name) {
+        if (ch.isLetterOrNumber()) {
+            normalized.append(ch.toLower());
+        }
+    }
+    return normalized;
+}
+
+/// Looks for a mapping whose <controller id> is the name of the device.
+///
+/// Mixxx opens only the mapping that the preferences remember, and it remembers it
+/// as an absolute path. That leaves two cases with no mapping at all: a device seen
+/// for the first time, and an installation that moved to another folder. In both,
+/// a mapping that claims the device by name takes over.
+QFileInfo findMappingForDevice(const QString& deviceName,
+        const QStringList& mappingPaths,
+        const QDir& systemMappingsPath) {
+    const QString wanted = normalizedDeviceName(deviceName);
+    if (wanted.isEmpty()) {
+        return QFileInfo();
+    }
+    for (const QString& mappingPath : mappingPaths) {
+        const QDir dir(mappingPath);
+        if (!dir.exists()) {
+            continue;
+        }
+        const QFileInfoList candidates = dir.entryInfoList(
+                QStringList{QStringLiteral("*.midi.xml"), QStringLiteral("*.hid.xml")},
+                QDir::Files,
+                QDir::Name);
+        for (const QFileInfo& candidate : candidates) {
+            const std::shared_ptr<LegacyControllerMapping> pMapping =
+                    LegacyControllerMappingFileHandler::loadMapping(
+                            candidate, systemMappingsPath);
+            if (!pMapping) {
+                continue;
+            }
+            if (normalizedDeviceName(pMapping->deviceId()) != wanted) {
+                continue;
+            }
+            qDebug() << "ControllerManager: mapping" << candidate.fileName()
+                     << "claims the device" << deviceName;
+            return candidate;
+        }
+    }
+    return QFileInfo();
+}
+
 } // anonymous namespace
 
 QString firstAvailableFilename(QSet<QString>& filenames,
@@ -285,23 +338,40 @@ void ControllerManager::slotSetUpDevices() {
 
         // The filename for this device name.
         QString deviceName = sanitizeDeviceName(name);
+        const ConfigKey enabledKey = ConfigKey("[Controller]", deviceName);
 
-        // Check if device is enabled
-        if (!m_pConfig->getValue(ConfigKey("[Controller]", deviceName), 0)) {
-            continue;
-        }
-
-        // Check if device has a configured mapping
+        // The mapping is remembered per device as an absolute path, so a device that
+        // has never been seen -- or an installation that moved -- is left with none
+        // and the controller is never opened. Look for a mapping that claims the
+        // device by name before giving up.
         QString mappingFilePath = getConfiguredMappingFileForDevice(deviceName);
-        if (mappingFilePath.isEmpty()) {
-            continue;
-        }
-
-        qDebug() << "Searching for controller mapping" << mappingFilePath
-                 << "in paths:" << mappingPaths.join(",");
         QFileInfo mappingFile = findMappingFile(mappingFilePath, mappingPaths);
         if (!mappingFile.exists()) {
-            qDebug() << "Could not find" << mappingFilePath << "in any mapping path.";
+            mappingFile = findMappingForDevice(name,
+                    mappingPaths,
+                    QDir(resourceMappingsPath(m_pConfig)));
+            if (mappingFile.exists()) {
+                mappingFilePath = mappingFile.filePath();
+                m_pConfig->setValue(ConfigKey(kSettingsGroup, deviceName), mappingFilePath);
+                if (!m_pConfig->getValue(enabledKey, 0)) {
+                    // A device nobody has configured is disabled by default; if a
+                    // mapping claims it, this is the moment to turn it on.
+                    m_pConfig->setValue(enabledKey, 1);
+                    qInfo() << "ControllerManager: enabled" << name << "with"
+                            << mappingFilePath;
+                }
+            }
+        }
+
+        // Check if device is enabled
+        if (!m_pConfig->getValue(enabledKey, 0)) {
+            continue;
+        }
+
+        if (!mappingFile.exists()) {
+            if (!mappingFilePath.isEmpty()) {
+                qDebug() << "Could not find" << mappingFilePath << "in any mapping path.";
+            }
             continue;
         }
 

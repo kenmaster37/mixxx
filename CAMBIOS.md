@@ -811,6 +811,39 @@ pick one, for example filters, the names overlap, they do not fit in the box"*.
   checked that they carry the three changed files. Published on the release
   `v2.7.0-alpha-2026-10-17`; the 16-10 one is marked as previous.
 
+## 27. The controller was left without a mapping
+
+Reported right after installing the 17 October package: *"testing with the controller, it is not
+taking the buttons; before it worked"*.
+
+- **What the log said**: `Searching for controller mapping
+  "C:/Program Files/Mixxx/controllers/Numark Mixtrack 2.midi.xml"` followed by `Could not find ...
+  in any mapping path`. The mapping was not being looked up at all: the configuration remembered an
+  **absolute path** to the mapping of the Mixxx that used to be installed in `C:\Program Files\Mixxx`.
+  This fork installs to `C:\Program Files\Mixxx Stem Engine`, so the path was dead and the device was
+  skipped in silence — the controller opened its MIDI ports but no button had a function.
+- **Why it is not automatic**: `ControllerManager::slotSetUpDevices()` opens only what the
+  configuration says. It checks `[Controller] <device>`, then loads exactly the file named in
+  `[ControllerPreset] <device>`, and if there is none it `continue`s. The **hardware** is detected;
+  the **mapping** is a decision remembered per device.
+- **Fix, in three parts**:
+  1. `findMappingForDevice()` in `controllermanager.cpp`: before giving up, it walks the mapping
+     paths looking for a file whose `<controller id>` is the device name (compared without case,
+     spaces or punctuation). If it finds one, it uses it and writes it into the configuration.
+  2. The same lookup runs when the remembered path no longer exists, which is the case that breaks
+     when the installation moves.
+  3. A device that nobody has configured is disabled by default; when a mapping claims it, it is
+     enabled on the first sighting.
+- **New preset** `res/controllers/Numark Mixtrack Pro II.midi.xml`: the existing file declares
+  `<controller id="MixTrack">` while the hardware reports `MixTrack Pro II`, so nothing could match it
+  by name. The new file is the same mapping with the id the device actually reports.
+- **Why the package is not called "Mixxx"**: installing into `C:\Program Files\Mixxx` would write on
+  top of a real Mixxx — two installations sharing a folder with different upgrade GUIDs, and
+  uninstalling one taking the other's files. The isolated package exists so that trying this fork
+  does not replace the official one. The problem was the absolute path in the configuration, not the
+  folder name, and that is what is fixed.
+
+
 
 
 
