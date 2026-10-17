@@ -154,25 +154,26 @@ build\x64__legacy\mixxx.exe --resource-path "C:\path\to\repo\res"
 ## 7. Downloads and generated packages
 
 The installers of the last batch are published together on the fork's **releases** page:
-**[`v2.7.0-alpha-2026-10-16`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-16)**
+**[`v2.7.0-alpha-2026-10-17`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-17)**
 
 | Package | For |
 | --- | --- |
-| [`mixxx-2026-10-16-stem-engine-amd64.msi`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-16/mixxx-2026-10-16-stem-engine-amd64.msi) | **Windows** 10/11 x64 |
-| [`mixxx-2026-10-16-stem-engine-amd64.deb`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-16/mixxx-2026-10-16-stem-engine-amd64.deb) | **Linux** amd64 (Ubuntu 24.04 / Mint) |
+| [`mixxx-2026-10-17-stem-engine-amd64.msi`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-17/mixxx-2026-10-17-stem-engine-amd64.msi) | **Windows** 10/11 x64 |
+| [`mixxx-2026-10-17-stem-engine-amd64.deb`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-17/mixxx-2026-10-17-stem-engine-amd64.deb) | **Linux** amd64 (Ubuntu 24.04 / Mint) |
 
 To check that what you downloaded is what was published:
 
 ```
-sha256  mixxx-2026-10-16-stem-engine-amd64.msi  87647f50ad7a68ea7576a525aae13e27aaddde97193a1cff089521745db86074
-sha256  mixxx-2026-10-16-stem-engine-amd64.deb  607ce430b128e958dde77b3118e94d807692972e29dc6f3c8ecf39a5077e31bc
+sha256  mixxx-2026-10-17-stem-engine-amd64.msi  2a1dc504daca3dd775ae0aa9d441f628ea5e8762271adb79c28f352157db6efc
+sha256  mixxx-2026-10-17-stem-engine-amd64.deb  d1e9f32dfe10fcf0728ae2524dbeaead21389c8b56cfbb11a26c8b77ad17f417
 ```
 
-The `.deb` was rebuilt on the morning of the 17th with the **window icon** and the launcher
-pointing at the icon file; the `.msi` is the one from the night before because those fixes are
-Linux-only.
+The MSI is packaged as version **2.8.2** (the project is 2.7.0): with the same upgrade GUID and the
+same version number Windows refuses to install on top of the previous test package with error 1638.
 
-The previous batch is still available at
+The previous batches are still available at
+[`v2.7.0-alpha-2026-10-16`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-16)
+and
 [`v2.7.0-alpha-2026-10-15`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-15).
 
 There are copies in `dist\` too, but they are **not versioned**: they are regenerated with the two
@@ -197,7 +198,23 @@ With this, **a library scan still shows the `.stem.mp4` as a track of its own**:
 that the conversion happened. Hiding it when its original sits next to it is left for a later
 version.
 
-## 9. Details of the changes and status
+## 9. The 17 October batch: effect names, the effect volume and the meters
+
+What came out of the first Linux test of the previous batch, plus two fixes taken from upstream's
+work on the MIC/AUX rack.
+
+| New | How it looks |
+| --- | --- |
+| **The effect name no longer spills over the next slot.** In a collapsed effect unit each slot is about 80 px wide, and the name label carried fixed padding of 23 px: the available width came out **negative**, Qt could not elide the text and drew it whole, on top of the neighbouring power button and knob. The label now clips and shrinks its padding, and the collapsed slot gives the name a line of its own. | ![Effect names](docs/fork/fx-nombres.png) |
+| **The effect volume knob stays.** That knob is what sets how much effect you hear, so it was never an option to drop it: it sits under the name line, and the name is what moved. Hovering the name shows it in full. | ![Effect names before the fix](docs/fork/fx-nombres-antes.png) |
+| **Peak hold on the VU meters.** The bars keep a mark on the peak for half a second and then let it fall, instead of dropping straight back with the level. Applies to the channel meters, the main mix and mic/aux in the three skins. | ![Peak hold](docs/fork/vu-pico.png) |
+| **Talkover and main mix no longer jump to 0.** Releasing the primary button while the secondary was still held wrote a 0 into the control. The power-window buttons now latch and leave the value alone. This one is in `res/qml/ControlProxyButtonBehavior.qml`, shared by all three skins. | — |
+
+The last two come from upstream's PR #17292 (`lateNight-qml-mic-aux-parity`) and were ported by
+hand. The rest of that PR — the pixel-for-pixel rewrite of the MIC/AUX geometry — was left out on
+purpose: it targets the classic skin's grid, not this fork's look.
+
+## 10. Details of the changes and status
 
 Development is documented in [`CAMBIOS.md`](CAMBIOS.md), section by section: what was
 changed, why, what was discarded and what is pending.

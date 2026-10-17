@@ -39,11 +39,15 @@ ComboBox {
     contentItem: Text {
         color: LateNightTheme.mixerQuickEffectSelectorTextColor
         elide: Text.ElideRight
-        font.pixelSize: 11
-        leftPadding: 5
-        rightPadding: 18
+        font.pixelSize: root.height < 22 ? 10 : 11
+        // Collapsed slots leave only a few pixels for the name; with the old fixed
+        // paddings the available width went negative and the text was drawn over
+        // the neighbouring slot. Clip it and shrink the paddings when it is narrow.
+        leftPadding: root.width > 56 && root.height >= 22 ? 5 : 2
+        rightPadding: root.width > 56 && root.height >= 22 ? 18 : 3
         text: root.displayText
         verticalAlignment: Text.AlignVCenter
+        clip: true
     }
     delegate: ItemDelegate {
         id: effectDelegate
@@ -77,6 +81,7 @@ ComboBox {
         anchors.verticalCenter: parent.verticalCenter
         height: 8
         source: LateNightTheme.assetFxSelectorDownButton
+        visible: root.width > 40 && root.height >= 22
         width: 12
     }
     popup: Popup {
@@ -109,6 +114,9 @@ ComboBox {
     }
 
     Component.onCompleted: syncCurrentEffect()
+    ToolTip.delay: 600
+    ToolTip.text: root.displayText
+    ToolTip.visible: hovered && root.width < 80
     onActivated: index => {
         const effectId = model.get(index).effectId || "";
         if (slot.effectId !== effectId) {

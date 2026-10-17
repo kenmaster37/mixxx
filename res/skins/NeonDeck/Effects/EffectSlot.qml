@@ -79,7 +79,7 @@ Item {
         id: slotControls
 
         anchors.right: parent.right
-        height: 30
+        height: root.expanded ? 30 : 44
         width: root.expanded ? 182 : parent.width
         y: Math.round((parent.height - height) / 2)
 
@@ -87,6 +87,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 2
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: root.expanded ? 0 : 9
             effectNumber: root.effectNumber
             height: 16
             unitGroup: root.unitGroup
@@ -102,6 +103,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: showFocus.value > 0 ? 20 : 2
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: root.expanded ? 0 : 9
             backgroundSource: LateNightTheme.assetFxSlotButtonBackground
             group: root.slot.group
             height: 26
@@ -116,6 +118,7 @@ Item {
             anchors.left: enableButton.right
             anchors.leftMargin: 2
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: root.expanded ? 0 : 9
             backgroundSource: LateNightTheme.assetSmallKnobBackground
             displayArc: true
             displayArcColor: root.unitColor
@@ -131,12 +134,13 @@ Item {
         EffectSelector {
             id: effectSelector
 
-            anchors.left: metaKnob.right
+            anchors.left: root.expanded ? metaKnob.right : parent.left
             anchors.leftMargin: 2
             anchors.right: parent.right
             anchors.rightMargin: 2
             anchors.verticalCenter: parent.verticalCenter
-            height: 24
+            anchors.verticalCenterOffset: root.expanded ? 0 : -13
+            height: root.expanded ? 24 : 18
             slot: root.slot
         }
     }

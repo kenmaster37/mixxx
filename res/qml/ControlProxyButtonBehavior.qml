@@ -23,6 +23,7 @@ Item {
     property bool pressAndHoldTriggered: false
     property bool longPressAnimationRunning: false
     property real longPressProgress: 0
+    property bool powerWindowLatched: false
     property real pressStartValue: 0
     property real pressTargetValue: 0
     readonly property real displayValue: displayControl.value
@@ -69,6 +70,7 @@ Item {
         root.pressAndHoldTriggered = false;
         root.primaryPressed(displayControl.value);
         if (root.powerWindow) {
+            root.powerWindowLatched = false;
             root.pressStartValue = displayControl.value;
             root.pressTargetValue = root.nextState(root.pressStartValue);
             powerWindowTimer.stop();
@@ -98,7 +100,10 @@ Item {
 
     function releasePrimary() {
         if (root.powerWindow) {
-            if (!powerWindowTimer.running) {
+            // Releasing the primary button while the secondary is still held used to
+            // drop the value to 0; with the latch armed, the action is left alone.
+            if (!powerWindowTimer.running && !root.powerWindowLatched &&
+                    !(interactionArea.pressedButtons & Qt.RightButton)) {
                 control.value = 0;
             }
             powerWindowTimer.stop();
@@ -124,6 +129,9 @@ Item {
     }
 
     function releaseSecondary() {
+        if (root.powerWindow && (interactionArea.pressedButtons & Qt.LeftButton)) {
+            root.powerWindowLatched = true;
+        }
         if (root.rightClickKey.length > 0) {
             rightControl.value = 0;
         }

@@ -777,6 +777,41 @@ Three things closed with verification, now on the user's machine.
   things. The `rescanLibrary()` method also remains available on a button of the Stems page of
   Preferences.
 
+## 26. The effect names left their box, and two things worth taking from upstream
+
+Reported after the first session with the 16 October package: *"when the effects are on and you
+pick one, for example filters, the names overlap, they do not fit in the box"*.
+
+- **Cause**: in a collapsed effect unit the slot is about 80 px wide; the effect name is a
+  `ComboBox` whose `contentItem` carried `leftPadding: 5` and `rightPadding: 18`. With ~24 px of
+  slot left for the name, the available width for the text came out **negative**, and a `Text` with
+  negative width does not elide: Qt drew the whole string, which landed on top of the neighbouring
+  slot's power button and knob. Seen as `Grap…c EQ` crossing two controls.
+- **Fix**: the padding is now adaptive (5/18 when there is room, 2/3 when there is not), the text
+  has `clip: true` so it can never leave its box, the drop-down arrow is hidden when the box is
+  narrow, and a tooltip shows the full name. In the collapsed slot the name gets **a line of its
+  own** above the on/off button and the knob, which is the only layout that leaves it readable: with
+  the knob in place the name would have about 10 px.
+- **The knob stays**: it is the control that sets how much effect is heard, so it is not an option
+  to hide it. That is why the row grew from 30 to 44 px instead of the name being shrunk further.
+  The row is 44 px with the name at 10 px; at 48 px the font was 11 px, which cost 4 px for nothing.
+- **Two changes from upstream PR #17292** (`lateNight-qml-mic-aux-parity`), ported by hand:
+  - `powerWindowLatched` in `res/qml/ControlProxyButtonBehavior.qml`: releasing the primary button
+    while the secondary was still held wrote a 0 into the control, so talkover and main mix jumped
+    to 0. It now leaves the value alone.
+  - Peak hold in `Controls/ImageVuMeter.qml`: the bar keeps a mark on the peak for 500 ms and then
+    lets it fall.
+  The rest of the PR (a pixel-for-pixel rewrite of the MIC/AUX geometry to match the classic skin)
+  was **not** taken: it targets a skin grid this fork does not use, it touches the two files where
+  our own pragma fix lives, and it would have to be redone by hand for the fork's skins.
+- **Verified** in WSL under Xvfb with the real skin and the real effect list, forcing nothing but a
+  test string: the name is drawn inside its box, the knob is present in both states, the expanded
+  unit is unchanged, and the log carries no new QML warnings.
+- **Packages of 17-10**: `.msi` 2.8.2 (120.824.844 B) and `.deb` (19.966.844 B), both opened and
+  checked that they carry the three changed files. Published on the release
+  `v2.7.0-alpha-2026-10-17`; the 16-10 one is marked as previous.
+
+
 
 
 
