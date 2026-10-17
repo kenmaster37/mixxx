@@ -1,5 +1,6 @@
 #include "controllers/controllermanager.h"
 
+#include <QCoreApplication>
 #include <QSet>
 #include <QThread>
 
@@ -97,9 +98,19 @@ QFileInfo findMappingForDevice(const QString& deviceName,
     if (wanted.isEmpty()) {
         return QFileInfo();
     }
-    for (const QString& mappingPath : mappingPaths) {
+    // The resource path is not always resolved this early, so look next to the
+    // executable too: that is where the shipped mappings are installed.
+    QStringList searchPaths = mappingPaths;
+    const QString appMappingsPath =
+            QDir(QCoreApplication::applicationDirPath())
+                    .filePath(QStringLiteral("controllers"));
+    if (!searchPaths.contains(appMappingsPath)) {
+        searchPaths.append(appMappingsPath);
+    }
+    for (const QString& mappingPath : searchPaths) {
         const QDir dir(mappingPath);
         if (!dir.exists()) {
+            qDebug() << "ControllerManager: no mapping directory" << mappingPath;
             continue;
         }
         const QFileInfoList candidates = dir.entryInfoList(
@@ -107,12 +118,17 @@ QFileInfo findMappingForDevice(const QString& deviceName,
                 QDir::Files,
                 QDir::Name);
         for (const QFileInfo& candidate : candidates) {
+            // Fall back to the folder the mapping lives in when the resource path is
+            // not usable yet.
+            const QDir scriptPath =
+                    systemMappingsPath.isEmpty() ? candidate.dir() : systemMappingsPath;
             const std::shared_ptr<LegacyControllerMapping> pMapping =
-                    LegacyControllerMappingFileHandler::loadMapping(
-                            candidate, systemMappingsPath);
+                    LegacyControllerMappingFileHandler::loadMapping(candidate, scriptPath);
             if (!pMapping) {
                 continue;
             }
+            qDebug() << "ControllerManager: mapping" << candidate.fileName()
+                     << "declares the device" << pMapping->deviceId();
             if (normalizedDeviceName(pMapping->deviceId()) != wanted) {
                 continue;
             }
@@ -121,6 +137,8 @@ QFileInfo findMappingForDevice(const QString& deviceName,
             return candidate;
         }
     }
+    qDebug() << "ControllerManager: no mapping claims the device" << deviceName
+             << "- searched" << searchPaths.join(QLatin1Char(','));
     return QFileInfo();
 }
 
