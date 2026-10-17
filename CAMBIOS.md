@@ -741,13 +741,16 @@ Dos cosas pequeñas que salieron del registro de Linux y de comparar arboles.
 
 Tres cosas cerradas con comprobacion, ya sobre el equipo del usuario.
 
-- **El icono (menu, muelle y lanzador) era la cache del tema**. Los ficheros estaban bien
-  instalados y el `.desktop` validaba, pero `/usr/share/icons/hicolor/icon-theme.cache` no los
-  indexaba, y tanto el menu como Plank leen la cache primero: de ahi la rueda generica en los tres
-  sitios a la vez. **Arreglo**: el `postinst` regenera la cache con `gtk-update-icon-cache -f -t`
-  (y el `postrm` tambien, al desinstalar), y se instala tambien el SVG escalable. Comprobado:
-  `strings icon-theme.cache | grep mixxx-stem-engine` da 1 tras instalar y 0 tras `purge`, sin
-  dejar ficheros. Confirmado por el usuario: "se arreglo lo del icono".
+- **El icono (menu, muelle y lanzador) era la resolucion del tema, no los ficheros**. Los ficheros
+  estaban bien instalados y el `.desktop` validaba, pero el menu y Plank resolvian el icono **por
+  nombre** y no lo encontraban: `icon-theme.cache` no lo indexaba. Primer intento, regenerar la cache
+  con `gtk-update-icon-cache -f -t` desde el `postinst`; en el laboratorio funciono, pero en el
+  equipo del usuario la herramienta **no esta instalada** (Mint), el `postinst` la salta y el icono
+  siguio saliendo como la rueda generica (`grep -c mixxx-stem-engine` sobre la cache daba **0**).
+  **Arreglo definitivo**: el `.desktop` no usa un nombre de tema, apunta al **fichero** (ruta
+  absoluta al PNG de 256x256 dentro del prefijo), asi que no depende ni de la cache ni de que exista
+  la herramienta. Los iconos se siguen copiando al tema y la cache se regenera **si** la herramienta
+  esta, como extra para otros lanzadores; el `postrm` lo deja todo limpio.
 - **El parpadeo de la onda era el bucle de dibujo, no la grafica**. El registro se llenaba de
   `VisualPlayPosition::calcOffsetAtNextVSync "[Channel1]" outdated position request (offset <
   minOffset)`: el dibujo pide la posicion del siguiente fotograma y esa posicion ya paso, asi que
