@@ -1,266 +1,264 @@
-# Cambios de este fork respecto al Mixxx original
+# Changes in this fork compared to the original Mixxx
 
-- **Repositorio:** <https://github.com/kenmaster37/mixxx>
+- **Repository:** <https://github.com/kenmaster37/mixxx>
 - **Base:** Mixxx 2.7.0-alpha, commit `0fffd3d0d0`
-  (*«Merge pull request #17253 from xARSENICx/fix/latenightqml-animations»*).
-- **Documentado:** 13-10-2026.
-- **Detalle sesión por sesión:** [`PENDIENTE.md`](PENDIENTE.md) (bitácora interna, sin limpiar;
-  está en el repositorio a propósito para no perder el porqué de cada decisión).
+  (*"Merge pull request #17253 from xARSENICx/fix/latenightqml-animations"*).
+- **Documented:** 13-10-2026.
+- **Session-by-session detail:** the author's internal log, `PENDIENTE.md` (not cleaned up and not
+  part of this repository).
 
-## Qué es este fork
+## What this fork is
 
-Un build personal de Mixxx pensado para pinchar con un **Numark Mixtrack Pro II**, con dos
-skins QML propias de estilo VirtualDJ/Serato, AutoDJ con IA, servidor OSC, un panel que sugiere
-la siguiente pista según la tonalidad y un **asistente de dispositivo de audio** que detecta la
-mesa al conectarla o desconectarla en caliente.
+A personal Mixxx build meant for DJing with a **Numark Mixtrack Pro II**, with two QML skins of its
+own in VirtualDJ/Serato style, AI-driven AutoDJ, an OSC server, a panel that suggests the next track
+by musical key and an **audio device assistant** that detects the mixer when it is plugged in or
+unplugged hot.
 
-No busca ser aceptado en upstream: son cambios de proyecto (skins propias, flujo de trabajo
-personal). Se mantienen separados para poder rehacer el merge sobre `main` cuando se quiera.
+It does not aim to be accepted upstream: these are project changes (skins of its own, a personal
+workflow). They are kept separate so that the merge onto `main` can be redone whenever wanted.
 
-## Resumen por área
+## Summary by area
 
-| Área | Cambio | Dónde |
+| Area | Change | Where |
 | --- | --- | --- |
-| **Skins propias** | `PulseDeck` y `NeonDeck`: skins QML completas (layout tipo VDJ/Serato, color por deck, tipografía Rajdhani, iconos Font Awesome) | `res/skins/PulseDeck/`, `res/skins/NeonDeck/` |
-| **Fuentes** | Rajdhani (SIL OFL) y Font Awesome Free 6.7.2 (SIL OFL / CC BY 4.0 / MIT), con sus licencias | `res/fonts/` |
-| **Carga de skins QML** | Las skins QML se cargan sin `--developer`; `NeonDeck` es la skin por defecto | `src/main.cpp`, `src/skin/skinloader.{h,cpp}` |
-| **Estilo oscuro nativo** | Hoja de estilo por defecto para widgets nativos (biblioteca, menús, diálogos) | `src/skin/defaultstylesheet.{h,cpp}`, `src/mixxxmainwindow.cpp` |
-| **Panel «Track Advisor»** | Sugiere la siguiente pista compatible armónicamente, bajo los samplers | `src/qml/qmllibraryproxy.{h,cpp}`, `src/skin/skincontrols.{h,cpp}`, `res/skins/*/Advisor/TrackAdvisor.qml` |
-| **AutoDJ armónico** | Selección por tonalidad/BPM con degradación progresiva; tests | `src/library/autodj/harmonicmixing.{h,cpp}`, `autodjcratesdao.{h,cpp}`, `autodjfeature.{h,cpp}` |
-| **AutoDJ con IA** | Planner compatible OpenAI/DeepSeek y barra de instrucción en AutoDJ; clave leída de forma asíncrona (QtKeychain) | `src/ai/aimixplanner.{h,cpp}`, `src/preferences/dialog/dlgprefai.*`, `dlgautodj.{h,cpp}` |
-| **Servidor OSC** | Servidor OSC con página de preferencias | `src/controllers/osc/oscserver.{h,cpp}`, `src/preferences/dialog/dlgprefosc.*` |
-| **Asistente de audio (estilo VDJ)** | Diálogo al conectar/desconectar un controlador, cambio de salida en caliente y elección recordada | `src/soundio/audiodeviceassistant.{h,cpp}`, `src/util/systemdevices.{h,cpp}` |
-| **Audio: sin mesa** | Si el dispositivo configurado no está conectado, suena el dispositivo por defecto del sistema; en Windows no se cierra la app si la frecuencia no es compatible | `src/soundio/soundmanagerconfig.{h,cpp}`, `soundmanager.{h,cpp}`, `sounddevice*.{h,cpp}`, `portaudioenumerator.{h,cpp}` |
-| **Pantalla completa (Linux)** | La acción de pantalla completa afecta a la ventana que muestra la skin QML | `src/qml/qmlapplication.{h,cpp}`, `src/qml/qmlapplicationproxy.h`, `src/mixxxmainwindow.cpp` |
-| **Atajos de teclado** | El *fallback* de `en_US.kbd.cfg` buscaba la ruta mal: nadie tenía atajos. Y al quedar activos, escribir en la caja de la IA del AutoDJ disparaba los comandos del deck | `src/controllers/keyboard/keyboardeventfilter.{h,cpp}`, `src/qml/qmllegacylibraryitem.cpp` |
-| **Controlador Mixtrack Pro II** | Scripts y mapeados sin controles inexistentes y sin el `abort()` del timer del plato | `res/controllers/Numark Mixtrack Pro.midi.xml`, `Numark-Mixtrack-{2,Pro}-scripts.js` |
-| **Interfaz de los decks** | Pads de hotcue que tapaban los ajustes del deck; botones muertos; botón sándwich ilegible con el menú abierto | `res/skins/*/Deck/*`, `res/skins/*/Toolbar/Toolbar.qml`, `res/qml/Deck/BeatJump.qml` |
-| **Empaquetado** | Empaquetado `.msi` y `.deb`, y alternativa de FFmpeg `-extra` para el `.deb` | `packaging/CPackConfig.cmake`, `packaging/CPackDebFfmpegExtraAlternatives.cmake` |
+| **Skins of its own** | `PulseDeck` and `NeonDeck`: full QML skins (VDJ/Serato style layout, colour per deck, Rajdhani type, Font Awesome icons) | `res/skins/PulseDeck/`, `res/skins/NeonDeck/` |
+| **Fonts** | Rajdhani (SIL OFL) and Font Awesome Free 6.7.2 (SIL OFL / CC BY 4.0 / MIT), with their licences | `res/fonts/` |
+| **QML skin loading** | The QML skins load without `--developer`; `NeonDeck` is the default skin | `src/main.cpp`, `src/skin/skinloader.{h,cpp}` |
+| **Native dark style** | Default style sheet for the native widgets (library, menus, dialogs) | `src/skin/defaultstylesheet.{h,cpp}`, `src/mixxxmainwindow.cpp` |
+| **"Track Advisor" panel** | Suggests the next harmonically compatible track, under the samplers | `src/qml/qmllibraryproxy.{h,cpp}`, `src/skin/skincontrols.{h,cpp}`, `res/skins/*/Advisor/TrackAdvisor.qml` |
+| **Harmonic AutoDJ** | Selection by key/BPM with progressive degradation; tests | `src/library/autodj/harmonicmixing.{h,cpp}`, `autodjcratesdao.{h,cpp}`, `autodjfeature.{h,cpp}` |
+| **AI AutoDJ** | OpenAI/DeepSeek-compatible planner and an instruction bar in AutoDJ; key read asynchronously (QtKeychain) | `src/ai/aimixplanner.{h,cpp}`, `src/preferences/dialog/dlgprefai.*`, `dlgautodj.{h,cpp}` |
+| **OSC server** | OSC server with a preferences page | `src/controllers/osc/oscserver.{h,cpp}`, `src/preferences/dialog/dlgprefosc.*` |
+| **Audio assistant (VDJ style)** | Dialog when a controller is connected/disconnected, hot output change and remembered choice | `src/soundio/audiodeviceassistant.{h,cpp}`, `src/util/systemdevices.{h,cpp}` |
+| **Audio: no mixer** | If the configured device is not connected, the system default device plays instead; on Windows the app does not close when the sample rate is not supported | `src/soundio/soundmanagerconfig.{h,cpp}`, `soundmanager.{h,cpp}`, `sounddevice*.{h,cpp}`, `portaudioenumerator.{h,cpp}` |
+| **Full screen (Linux)** | The full screen action affects the window that shows the QML skin | `src/qml/qmlapplication.{h,cpp}`, `src/qml/qmlapplicationproxy.h`, `src/mixxxmainwindow.cpp` |
+| **Keyboard shortcuts** | The *fallback* to `en_US.kbd.cfg` looked up the path wrong: nobody had shortcuts. And once they were active, typing in the AutoDJ AI box fired the deck commands | `src/controllers/keyboard/keyboardeventfilter.{h,cpp}`, `src/qml/qmllegacylibraryitem.cpp` |
+| **Mixtrack Pro II controller** | Scripts and mappings without non-existent controls and without the platter timer's `abort()` | `res/controllers/Numark Mixtrack Pro.midi.xml`, `Numark-Mixtrack-{2,Pro}-scripts.js` |
+| **Deck interface** | Hotcue pads that covered the deck settings; dead buttons; unreadable sandwich button with the menu open | `res/skins/*/Deck/*`, `res/skins/*/Toolbar/Toolbar.qml`, `res/qml/Deck/BeatJump.qml` |
+| **Packaging** | `.msi` and `.deb` packaging, and the FFmpeg `-extra` alternative for the `.deb` | `packaging/CPackConfig.cmake`, `packaging/CPackDebFfmpegExtraAlternatives.cmake` |
 
-## 1. Skins QML propias: `PulseDeck` y `NeonDeck`
+## 1. QML skins of its own: `PulseDeck` and `NeonDeck`
 
-Ambas parten de `LateNightQML` y están reescritas como skins planas y oscuras, con el aspecto
-de una consola moderna: color por deck (A cian / B rosa) con las ondas a juego, anillos de color
-en los platos, rejilla de pads a la derecha del navegador, FX en los bordes y tipografía propia.
+Both start from `LateNightQML` and are rewritten as flat, dark skins, with the look of a modern
+console: colour per deck (A cyan / B pink) with matching waveforms, coloured rings on the platters,
+a pad grid to the right of the browser, FX on the edges and type of their own.
 
-- `res/skins/PulseDeck/` y `res/skins/NeonDeck/`: skin completa (deck compacto/mixi/full, mixer,
-  efectos, sampler, mic/aux, biblioteca, toolbar y panel Advisor).
-- `res/skins/NeonDeck/Controls/IconLabel.qml`: dibuja un glifo de Font Awesome como si fuera texto
-  (`LateNightTheme.iconGlyph(name)`), lo que permite colorear los iconos según el estado.
-- `src/main.cpp`: se quitó la condición que exigía `--developer` para cargar skins QML.
-- `src/skin/skinloader.{h,cpp}`: `skinFromDirectory()` descubre las skins QML como cualquier otra,
-  `getDefaultSkinName()` devuelve `NeonDeck`.
-- `src/skin/defaultstylesheet.{h,cpp}` + `src/mixxxmainwindow.cpp`: hoja de estilo propia para los
-  widgets nativos (el árbol no usa el look de `LateNight`).
-- `res/skins/LateNightQML/**`: ajustes menores compartidos (botones de beat, `SkinControlBootstrap`,
-  toolbar y atajos del menú de aplicación).
+- `res/skins/PulseDeck/` and `res/skins/NeonDeck/`: full skin (compact/mixi/full deck, mixer,
+  effects, sampler, mic/aux, library, toolbar and Advisor panel).
+- `res/skins/NeonDeck/Controls/IconLabel.qml`: draws a Font Awesome glyph as if it were text
+  (`LateNightTheme.iconGlyph(name)`), which allows the icons to be coloured according to state.
+- `src/main.cpp`: the condition that required `--developer` to load QML skins was removed.
+- `src/skin/skinloader.{h,cpp}`: `skinFromDirectory()` discovers the QML skins like any other,
+  `getDefaultSkinName()` returns `NeonDeck`.
+- `src/skin/defaultstylesheet.{h,cpp}` + `src/mixxxmainwindow.cpp`: style sheet of its own for the
+  native widgets (the tree does not use the `LateNight` look).
+- `res/skins/LateNightQML/**`: minor shared tweaks (beat buttons, `SkinControlBootstrap`,
+  toolbar and application menu shortcuts).
 
-⚠️ **Trampa de los assets:** `lateNightAsset()` arma las rutas como
-`../../LateNight/<ColorScheme.name>/...`, y en `res/skins/LateNight/` sólo existen `classic` y
-`palemoon`. Si un esquema declara otro `name`, **no se carga ningún SVG**. En NeonDeck se mapea
-`neondeck → palemoon` en su `LateNightTheme.qml`.
+⚠️ **Assets trap:** `lateNightAsset()` builds the paths as
+`../../LateNight/<ColorScheme.name>/...`, and in `res/skins/LateNight/` only `classic` and
+`palemoon` exist. If a scheme declares another `name`, **no SVG is loaded**. In NeonDeck
+`neondeck → palemoon` is mapped in its `LateNightTheme.qml`.
 
-## 2. Panel «Track Advisor»
+## 2. "Track Advisor" panel
 
-Panel plegable (por defecto **apagado**) que lista las pistas de la biblioteca que mezclan
-armónicamente con la que suena, bajo la rejilla de samplers; la biblioteca se desplaza en vez de
-quedar tapada. Al hacer clic carga la pista en el deck que no sirve de referencia.
+Collapsible panel (**off** by default) that lists the library tracks that mix harmonically with the
+one playing, under the sampler grid; the library scrolls instead of being covered. Clicking loads
+the track into the deck that is not the reference.
 
-- `QmlLibraryProxy::findCompatibleTracks()` (nuevo, `src/qml/qmllibraryproxy.{h,cpp}`) reutiliza
-  `mixxx::HarmonicMixing` y devuelve una lista de mapas lista para QML.
-- Control `[Skin] show_track_advisor` (`src/skin/skincontrols.{h,cpp}`), botón **ADVISOR** en la
-  barra y *Vista → Show Track Advisor* (**Ctrl+7**) en `src/widget/wmainmenubar.{h,cpp}`.
-- QML: `res/skins/{NeonDeck,PulseDeck}/Advisor/TrackAdvisor.qml` y su sitio en `MainWindow.qml`.
+- `QmlLibraryProxy::findCompatibleTracks()` (new, `src/qml/qmllibraryproxy.{h,cpp}`) reuses
+  `mixxx::HarmonicMixing` and returns a list of maps ready for QML.
+- Control `[Skin] show_track_advisor` (`src/skin/skincontrols.{h,cpp}`), **ADVISOR** button in the
+  toolbar and *View → Show Track Advisor* (**Ctrl+7**) in `src/widget/wmainmenubar.{h,cpp}`.
+- QML: `res/skins/{NeonDeck,PulseDeck}/Advisor/TrackAdvisor.qml` and its place in `MainWindow.qml`.
 
-## 3. AutoDJ armónico y AutoDJ con IA
+## 3. Harmonic AutoDJ and AI AutoDJ
 
-- `src/library/autodj/harmonicmixing.{h,cpp}` (nuevo): círculo de quintas sobre el enum
-  `ChromaticKey`, con la tolerancia de BPM `[Auto DJ] HarmonicBpmTolerance`; acepta también las
-  ventanas de tempo mitad y doble. Si ninguna candidata cumple, degrada **primero** a compatibilidad
-  de tonalidad y sólo después a aleatorio (antes se perdía la armonía con bibliotecas concentradas
-  en un rango estrecho de BPM).
+- `src/library/autodj/harmonicmixing.{h,cpp}` (new): circle of fifths over the `ChromaticKey` enum,
+  with the BPM tolerance `[Auto DJ] HarmonicBpmTolerance`; it also accepts the half and double
+  tempo windows. If no candidate qualifies, it degrades **first** to key compatibility and only
+  then to random (before, harmony was lost with libraries concentrated in a narrow BPM range).
 - `src/library/dao/autodjcratesdao.{h,cpp}`: `getRandomTrackIdHarmonic()`.
-- `src/library/autodj/autodjfeature.{h,cpp}` y `dlgautodj.{h,cpp}`: barra de instrucción en lenguaje
-  natural y planificador creado de forma perezosa.
-- `src/ai/aimixplanner.{h,cpp}` (nuevo): cliente compatible con OpenAI/DeepSeek. **La clave de API
-  no está en el repositorio**: se guarda en preferencias y se lee con QtKeychain de forma asíncrona
-  (`ReadPasswordJob`), igual que hace la página `DlgPrefAi`.
-- `src/preferences/dialog/dlgprefai.{h,cpp,.ui}` (nuevo) y `dlgprefautodj.*` (grupo *Harmonic
-  Mixing*), registrados en `dlgpreferences.cpp`.
+- `src/library/autodj/autodjfeature.{h,cpp}` and `dlgautodj.{h,cpp}`: natural language instruction
+  bar and planner created lazily.
+- `src/ai/aimixplanner.{h,cpp}` (new): OpenAI/DeepSeek-compatible client. **The API key is not in
+  the repository**: it is stored in the preferences and read with QtKeychain asynchronously
+  (`ReadPasswordJob`), just like the `DlgPrefAi` page does.
+- `src/preferences/dialog/dlgprefai.{h,cpp,.ui}` (new) and `dlgprefautodj.*` (*Harmonic Mixing*
+  group), registered in `dlgpreferences.cpp`.
 
-## 4. Servidor OSC
+## 4. OSC server
 
-`src/controllers/osc/oscserver.{h,cpp}` (nuevo) se crea y arranca desde `CoreServices` (`m_pOscServer`),
-con su página de preferencias `dlgprefosc.{h,cpp,.ui}`. Se usa para controlar Mixxx desde fuera
-(por ejemplo, para medir CPU y para automatizar pruebas).
+`src/controllers/osc/oscserver.{h,cpp}` (new) is created and started from `CoreServices`
+(`m_pOscServer`), with its preferences page `dlgprefosc.{h,cpp,.ui}`. It is used to control Mixxx
+from outside (for example, to measure CPU and to automate tests).
 
-## 5. Asistente de dispositivo de audio (estilo VirtualDJ)
+## 5. Audio device assistant (VirtualDJ style)
 
-**Qué hace:** cuando se conecta o desconecta un controlador mientras Mixxx está abierto, aparece un
-diálogo que **nombra el dispositivo reconocido** y deja elegir, y la salida de audio cambia en
-caliente sin reiniciar. Si el dispositivo que estaba en uso desaparece, avisa y pasa al audio del
-ordenador. La elección se puede recordar (`[Sound] controller_audio_device` = `mixer` | `computer`).
-La misma acción está en el menú (*Vista → Audio Setup Assistant*, `Ctrl+8`) y, al usarla, **siempre
-pregunta** aunque haya una elección recordada; si no hay ninguna mesa, lo dice.
+**What it does:** when a controller is connected or disconnected while Mixxx is open, a dialog
+appears that **names the recognised device** and lets you choose, and the audio output switches
+hot without a restart. If the device that was in use disappears, it warns and moves to the
+computer audio. The choice can be remembered (`[Sound] controller_audio_device` = `mixer` | `computer`).
+The same action is in the menu (*View → Audio Setup Assistant*, `Ctrl+8`) and, when used, it
+**always asks** even if there is a remembered choice; if there is no mixer at all, it says so.
 
-- `src/soundio/audiodeviceassistant.{h,cpp}` (nuevo): vigilante cada 2 s, diálogos, elección de la
-  API y de los canales (`Main` en los canales 1-2 y, con 4 o más canales, `Headphones` en 3-4).
-- `src/util/systemdevices.{h,cpp}` (nuevo): lista **barata** de dispositivos del sistema (MIDI con
-  `winmm` en Windows, `/proc/asound/cards` en Linux). No toca el motor de audio ni el backend de
-  controladores, por eso se puede consultar cada 2 s.
-- Al detectar un cambio se reenumera de verdad (`SoundManager::reinitializeDevices()`: cierra los
-  streams, `Pa_Terminate`/`Pa_Initialize` y vuelve a casar la configuración), lo que **corta el audio
-  un instante** de forma inevitable: PortAudio sólo enumera al arrancar. Se intentó evitarlo con
-  reintentos y con preferencia forzada de WASAPI y **ambos se revirtieron** (más cortes y lag; ver
-  `PENDIENTE.md` §6.15).
-- El controlador se reconoce **por nombre** (el nombre MIDI comparado con el de las salidas,
-  normalizado a letras y dígitos en minúscula: `MixTrack Pro II` casa con
-  `Altavoces (MixTrack Pro II)`), así que sirve con cualquier marca.
-- El asistente **respeta la API configurada**: si el dispositivo aparece en la API de la
-  configuración, la usa; si no, recorre el orden natural de `getHostAPIList()`. No fuerza WASAPI ni
-  degrada a MME.
-- Cableado: `src/qml/qmlapplication.{h,cpp}` (propietario del asistente en los builds QML),
+- `src/soundio/audiodeviceassistant.{h,cpp}` (new): watcher every 2 s, dialogs, choice of the
+  API and of the channels (`Main` on channels 1-2 and, with 4 or more channels, `Headphones` on 3-4).
+- `src/util/systemdevices.{h,cpp}` (new): **cheap** list of system devices (MIDI with
+  `winmm` on Windows, `/proc/asound/cards` on Linux). It does not touch the audio engine nor the
+  controller backend, which is why it can be queried every 2 s.
+- When a change is detected the devices are really re-enumerated (`SoundManager::reinitializeDevices()`:
+  closes the streams, `Pa_Terminate`/`Pa_Initialize` and matches the configuration again), which
+  **cuts the audio for an instant** unavoidably: PortAudio only enumerates at startup. It was
+  attempted to avoid it with retries and with a forced WASAPI preference and **both were reverted**
+  (more dropouts and lag; see `PENDIENTE.md` §6.15).
+- The controller is recognised **by name** (the MIDI name compared with the one of the outputs,
+  normalised to lowercase letters and digits: `MixTrack Pro II` matches
+  `Altavoces (MixTrack Pro II)`), so it works with any brand.
+- The assistant **respects the configured API**: if the device shows up in the API of the
+  configuration, it uses it; if not, it walks the natural order of `getHostAPIList()`. It does not
+  force WASAPI nor degrade to MME.
+- Wiring: `src/qml/qmlapplication.{h,cpp}` (owner of the assistant in the QML builds),
   `src/qml/qmlapplicationproxy.h` (`Mixxx.Application.checkAudioDevices()`),
-  `src/mixxxmainwindow.{h,cpp}` (builds sin QML), `src/widget/wmainmenubar.{h,cpp}` y las entradas de
-  menú de las tres skins (`Toolbar/Toolbar.qml`, `Toolbar/ApplicationMenuShortcuts.qml`,
+  `src/mixxxmainwindow.{h,cpp}` (builds without QML), `src/widget/wmainmenubar.{h,cpp}` and the menu
+  entries of the three skins (`Toolbar/Toolbar.qml`, `Toolbar/ApplicationMenuShortcuts.qml`,
   `res/qml/ApplicationMenuActions.qml`, `res/qml/MainMenuBar.qml`).
-- `CMakeLists.txt`: fuentes nuevas y enlace de `winmm` (no lo hereda el ejecutable desde la
-  biblioteca estática).
+- `CMakeLists.txt`: new sources and linking of `winmm` (the executable does not inherit it from the
+  static library).
 
-**Limitación conocida:** si Mixxx arranca **con la mesa desconectada** y se enchufa después, el audio
-cambia pero los botones no responden hasta reiniciar Mixxx: `PortMidiEnumerator` sólo enumera
-dispositivos al inicializarse. El intento de arreglarlo (un `refreshHostDevices()` con
-`Pm_Terminate` + `Pm_Initialize`) **crasheaba** por objetos obsoletos del build incremental y se
-revirtió; para reintentarlo hace falta `cmake --build . --clean-first` después de tocar la clase base
-y sincronizar con `dlgprefcontrollers` (ver `PENDIENTE.md` §6.15).
+**Known limitation:** if Mixxx starts **with the mixer disconnected** and it is plugged in later, the
+audio changes but the buttons do not respond until Mixxx is restarted: `PortMidiEnumerator` only
+enumerates devices when it initialises. The attempt to fix it (a `refreshHostDevices()` with
+`Pm_Terminate` + `Pm_Initialize`) **crashed** because of stale objects from the incremental build and
+was reverted; to try again a `cmake --build . --clean-first` is needed after touching the base class
+and syncing with `dlgprefcontrollers` (see `PENDIENTE.md` §6.15).
 
-## 6. Audio: qué pasa cuando no hay mesa
+## 6. Audio: what happens when there is no mixer
 
-- `SoundManagerConfig::validateDevices()`: si no queda ningún dispositivo de salida conectado, añade
-  la salida del **dispositivo por defecto del sistema** para que Mixxx siga sonando en vez de quedarse
-  mudo, marcando el añadido como temporal para que **no se guarde** en `soundconfig.xml` y para que la
-  elección del usuario se conserve y se recupere al reconectar.
-- `SoundManagerConfig::addOutput()`/`addInput()` quitan esa marca temporal al añadir un dispositivo,
-  de modo que lo que elige el usuario (o el asistente) **sí** se guarda. Sin esto, la elección se
-  perdía.
-- **Negociación de frecuencia:** `SoundDevice::isSampleRateSupported()` (en PortAudio con
-  `Pa_IsFormatSupported`) y `SoundManagerConfig::checkSampleRate()` prueban la frecuencia configurada,
-  luego la del dispositivo y luego la lista de la API. En Windows, pedir una frecuencia que el
-  endpoint no acepta hacía que Mixxx mostrara un error y se cerrara.
+- `SoundManagerConfig::validateDevices()`: if no output device is left connected, it adds the output
+  of the **system default device** so that Mixxx keeps sounding instead of going silent, marking the
+  addition as temporary so that it is **not saved** in `soundconfig.xml` and so that the user's
+  choice is kept and recovered on reconnection.
+- `SoundManagerConfig::addOutput()`/`addInput()` remove that temporary mark when a device is added,
+  so that what the user (or the assistant) chooses **is** saved. Without this, the choice was lost.
+- **Sample rate negotiation:** `SoundDevice::isSampleRateSupported()` (in PortAudio with
+  `Pa_IsFormatSupported`) and `SoundManagerConfig::checkSampleRate()` try the configured rate, then
+  the device's one and then the API list. On Windows, asking for a rate the endpoint does not accept
+  made Mixxx show an error and close.
 - `SoundManager::reinitializeDevices()`, `getDefaultOutputDevice()`, `getDevice()`,
-  `getSubstitutedDevices()`, y `SoundDeviceEnumerator::getDefaultOutputDevice(api)`.
+  `getSubstitutedDevices()`, and `SoundDeviceEnumerator::getDefaultOutputDevice(api)`.
 
-## 7. Pantalla completa en Linux
+## 7. Full screen on Linux
 
-La acción de pantalla completa apuntaba a la ventana `QWidget` oculta de `MixxxMainWindow`, mientras
-que las skins QML se dibujan en la ventana que crea `QQmlApplicationEngine`, por lo que no hacía nada.
-Ahora `QmlApplication` guarda su ventana y `QmlApplicationProxy::setWindowFullScreen()` la aplica;
-`MixxxMainWindow::slotViewFullScreen()` la usa primero.
+The full screen action pointed at the hidden `QWidget` window of `MixxxMainWindow`, while the QML
+skins are drawn in the window created by `QQmlApplicationEngine`, so it did nothing. Now
+`QmlApplication` keeps its window and `QmlApplicationProxy::setWindowFullScreen()` applies it;
+`MixxxMainWindow::slotViewFullScreen()` uses it first.
 
-## 8. Atajos de teclado
+## 8. Keyboard shortcuts
 
-`src/controllers/keyboard/keyboardeventfilter.cpp`: el *fallback* a `en_US.kbd.cfg` pasaba
-`resourcePath` (que termina en `res/`) en lugar de `resourcePath + "keyboard/"`, así que buscaba
-`res/en_US.kbd.cfg` y terminaba con `starting without shortcuts`: **el usuario no tenía ningún atajo**.
-Arreglo de una línea; verificado con Ctrl+P.
+`src/controllers/keyboard/keyboardeventfilter.cpp`: the *fallback* to `en_US.kbd.cfg` passed
+`resourcePath` (which ends in `res/`) instead of `resourcePath + "keyboard/"`, so it looked for
+`res/en_US.kbd.cfg` and ended with `starting without shortcuts`: **the user had no shortcut at all**.
+One-line fix; verified with Ctrl+P.
 
-### 8.1 Escribir en el panel AutoDJ disparaba los atajos
+### 8.1 Typing in the AutoDJ panel fired the shortcuts
 
-Al quedar activos los atajos apareció un efecto secundario: en la caja de instrucciones de la IA
-(panel AutoDJ) **no se podía escribir**, y cada letra movía el crossfader, arrancaba la reproducción
-o disparaba hotcues. Los 26 mapeos de una sola letra de `en_US.kbd.cfg` (`h`/`g` crossfader, `d` play,
-`f` cue, `z`-`v`/`m` hotcues, `q`/`w`/`e`/`u`/`i`/`o` loops, `a`/`s`/`j`/`k` beatjump, `p` cargar
-pista, `t`/`y` PFL, `b`/`n` parámetro, `r` editar, `l` play) chocaban con la escritura.
+Once the shortcuts were active a side effect appeared: in the AI instruction box (AutoDJ panel)
+**nothing could be typed**, and every letter moved the crossfader, started playback or fired
+hotcues. The 26 single-letter mappings of `en_US.kbd.cfg` (`h`/`g` crossfader, `d` play, `f` cue,
+`z`-`v`/`m` hotcues, `q`/`w`/`e`/`u`/`i`/`o` loops, `a`/`s`/`j`/`k` beatjump, `p` load track,
+`t`/`y` PFL, `b`/`n` parameter, `r` edit, `l` play) clashed with typing.
 
-Causa: el árbol de widgets de la biblioteca se **pinta** dentro de un item de QML
-(`mixxx::qml::QmlLegacyLibraryItem`) y vive **fuera de pantalla** (`WA_DontShowOnScreen`), con los
-clics y las teclas reenviados a mano. El `KeyboardEventFilter` está instalado en toda la aplicación
-(`app->installEventFilter(...)`), así que ve las teclas antes que nadie, y su guarda para no pisar la
-escritura era `isEditableTextInput(QGuiApplication::focusObject())`, que **no puede ver** un widget que
-no está en la jerarquía de ventanas: devuelve la ventana QML. Con la caja enfocada, el filtro seguía
-tratando las letras como atajos y además **se comía la tecla**.
+Cause: the library widget tree is **painted** inside a QML item (`mixxx::qml::QmlLegacyLibraryItem`)
+and lives **offscreen** (`WA_DontShowOnScreen`), with clicks and keys forwarded by hand. The
+`KeyboardEventFilter` is installed on the whole application (`app->installEventFilter(...)`), so it
+sees the keys before anyone else, and its guard to avoid stepping on typing was
+`isEditableTextInput(QGuiApplication::focusObject())`, which **cannot see** a widget that is not in
+the window hierarchy: it returns the QML window. With the box focused, the filter still treated the
+letters as shortcuts and also **swallowed the key**.
 
-Arreglo, siguiendo el patrón de *callback* que ya usa el proyecto:
+Fix, following the *callback* pattern the project already uses:
 
-- `KeyboardEventFilter::isEditableTextInput()` pasa a ser método estático público.
-- `KeyboardEventFilter::registerEmbeddedTextInputFocusQuery(std::function<bool()>)`: quien pinta
-  widgets fuera de pantalla registra una consulta, y la guarda del filtro pasa a
+- `KeyboardEventFilter::isEditableTextInput()` becomes a public static method.
+- `KeyboardEventFilter::registerEmbeddedTextInputFocusQuery(std::function<bool()>)`: whoever paints
+  offscreen widgets registers a query, and the filter's guard becomes
   `isEditableTextInput(focusObject()) || (s_embeddedTextInputFocusQuery && s_embeddedTextInputFocusQuery())`.
-- `QmlLegacyLibraryItem` la registra en su constructor (y la limpia en el destructor) devolviendo
-  `isEditableTextInput(m_pFocusedWidget)`, que es el widget que `updateEmbeddedFocus()` asigna en cada
-  clic. Así el estado se lee en vivo y no hay nada que se desincronice.
+- `QmlLegacyLibraryItem` registers it in its constructor (and clears it in the destructor) returning
+  `isEditableTextInput(m_pFocusedWidget)`, which is the widget that `updateEmbeddedFocus()` assigns on
+  every click. That way the state is read live and there is nothing to get out of sync.
 
-Con eso, escribir en la caja funciona y los atajos siguen activos al volver el foco a la tabla de
-pistas (un clic en la tabla deja el viewport, que no es un campo de texto). Verificado por el usuario
-en pantalla.
+With that, typing in the box works and the shortcuts stay active when focus goes back to the track
+table (a click on the table focuses the viewport, which is not a text field). Verified by the user on
+screen.
 
-### 8.2 La barra espaciadora activaba «BIG LIBRARY» al escribir
+### 8.2 The space bar triggered "BIG LIBRARY" while typing
 
-Quedó un cabo suelto del apartado anterior: ya se podía escribir, pero **el espacio activaba
-«BIG LIBRARY»**, porque el espacio *es* el atajo de *Maximize Library* (decisión de upstream, está en
-`res/qml/ApplicationMenuActions.qml` y en `res/keyboard/en_US.kbd.cfg`).
+A loose end was left from the previous section: typing worked now, but **the space bar triggered
+"BIG LIBRARY"**, because space *is* the *Maximize Library* shortcut (an upstream decision, it is in
+`res/qml/ApplicationMenuActions.qml` and in `res/keyboard/en_US.kbd.cfg`).
 
-El filtro de teclado no era el único camino que había que tapar:
+The keyboard filter was not the only path to cover:
 
-- los `Shortcut` de QML (`Toolbar/ApplicationMenuShortcuts.qml`) los resuelve Qt **antes** de entregar
-  la tecla al item, así que no pasan por `KeyboardEventFilter`;
-- y las `Action` de `ApplicationMenuActions.qml` son de **QtQuick**, que **registra el atajo de la
-  propia Action** por su cuenta (el skin instancia `MainMenuBar`, así que están en un menú). Bloquear
-  sólo el `Shortcut` no bastaba —se probó y seguía activándose—.
+- the QML `Shortcut`s (`Toolbar/ApplicationMenuShortcuts.qml`) are resolved by Qt **before** the key
+  is delivered to the item, so they do not go through `KeyboardEventFilter`;
+- and the `Action`s of `ApplicationMenuActions.qml` are **QtQuick** ones, which **register the
+  shortcut of the Action itself** on their own (the skin instantiates `MainMenuBar`, so they are in a
+  menu). Blocking only the `Shortcut` was not enough — it was tried and it still fired —.
 
-Solución, con una única fuente de verdad:
+Solution, with a single source of truth:
 
-- `KeyboardEventFilter::isTextInputFocused()`, que usa el propio filtro y que se expone a QML como la
-  propiedad `Mixxx.Application.textInputFocused` (con `NOTIFY` desde `focusObjectChanged` y desde un
-  aviso que manda `QmlLegacyLibraryItem` cuando cambia el foco de sus widgets pintados).
-- El bloqueo en `configuredMenuShortcut()`, el único punto donde se definen los 32 atajos del menú:
-  mientras se escribe devuelve `""`, y eso desarma a la vez el atajo de la Action y el `Shortcut` de
-  QML. Al salir el foco de la caja, el binding se reevalúa y los atajos vuelven.
+- `KeyboardEventFilter::isTextInputFocused()`, which the filter itself uses and which is exposed to
+  QML as the property `Mixxx.Application.textInputFocused` (with `NOTIFY` from `focusObjectChanged`
+  and from a notice that `QmlLegacyLibraryItem` sends when the focus of its painted widgets changes).
+- The block in `configuredMenuShortcut()`, the only place where the 32 menu shortcuts are defined:
+  while typing it returns `""`, and that disarms both the Action's shortcut and the QML `Shortcut`.
+  When the focus leaves the box, the binding is re-evaluated and the shortcuts come back.
 
-## 9. Controlador Numark Mixtrack Pro II
+## 9. Numark Mixtrack Pro II controller
 
-- `res/controllers/Numark Mixtrack Pro.midi.xml`: los grupos `[Flanger]` y `[ChannelN],flanger` no
-  existen en Mixxx 2.x; los knobs y LED de FX ahora apuntan a
-  `[EffectRack1_EffectUnitN_Effect1]`. El script usa `fxSlotForDeck(deck)`.
-- `res/controllers/Numark-Mixtrack-Pro-scripts.js`: el timer llamaba a `jogWheelStopScratch()` **sin
-  el deck**, y `scratchDisable(undefined)` acababa en `groupForDeck(-1)`, que falla una aserción
-  (`DEBUG_ASSERTIONS_FATAL`) y **cerraba Mixxx**. Se pasa el deck y se añade una guarda en los dos
-  scripts del Mixtrack.
-- Nota de uso: el plato sólo hace *scratch* con el deck sonando si su modo vinyl/scratch está
-  encendido (nota `0x48`/`0x50`, con LED); apagado es *nudge*, como un CDJ.
-- Los tests `src/test/{neondeckskin,pulsedeck_skin,harmonicmixing,aimixplanner}_test.cpp` cubren la
-  carga de las skins y la lógica de selección.
+- `res/controllers/Numark Mixtrack Pro.midi.xml`: the `[Flanger]` and `[ChannelN],flanger` groups do
+  not exist in Mixxx 2.x; the FX knobs and LEDs now point at
+  `[EffectRack1_EffectUnitN_Effect1]`. The script uses `fxSlotForDeck(deck)`.
+- `res/controllers/Numark-Mixtrack-Pro-scripts.js`: the timer called `jogWheelStopScratch()` **without
+  the deck**, and `scratchDisable(undefined)` ended in `groupForDeck(-1)`, which fails an assertion
+  (`DEBUG_ASSERTIONS_FATAL`) and **closed Mixxx**. The deck is passed and a guard is added in both
+  Mixtrack scripts.
+- Usage note: the platter only scratches with the deck playing if its vinyl/scratch mode is on
+  (note `0x48`/`0x50`, with LED); off it is *nudge*, like a CDJ.
+- The tests `src/test/{neondeckskin,pulsedeck_skin,harmonicmixing,aimixplanner}_test.cpp` cover the
+  skin loading and the selection logic.
 
-## 10. Interfaz de los decks y del menú
+## 10. Deck and menu interface
 
-- Los números de los pads de hotcue tapaban los ajustes del deck (estrellas, slip, quantize, curpos,
-  eject, repeat, keylock): `deckSettingsTopOffset` en `res/skins/*/Deck/OverviewRow.qml` (y el panel de
-  fondo a juego) desplaza el bloque cuando los pads están visibles.
-- Botones muertos: `beatloop_size_double/halve` y `beatjump_size_halve/double` no existen (los reales
-  son `loop_double`/`loop_halve`), así que el *spin box* de tamaño no avanzaba.
-  Ver `res/qml/Deck/BeatJump.qml` y los `TransportLoopBeatjump*` de las tres skins.
-- El botón sándwich del menú se ponía gris sin que se vieran las líneas: el icono era el SVG claro
-  `btn__menu.svg` sobre el fondo gris del menú abierto. Ahora se dibuja con la fuente de iconos y se
-  colorea según el estado (`PulseDeck` y `NeonDeck`; en `LateNightQML` sigue igual porque ese tema no
-  tiene la fuente de iconos).
+- The hotcue pad numbers covered the deck settings (stars, slip, quantize, curpos, eject, repeat,
+  keylock): `deckSettingsTopOffset` in `res/skins/*/Deck/OverviewRow.qml` (and the matching
+  background panel) moves the block when the pads are visible.
+- Dead buttons: `beatloop_size_double/halve` and `beatjump_size_halve/double` do not exist (the real
+  ones are `loop_double`/`loop_halve`), so the size *spin box* did not advance.
+  See `res/qml/Deck/BeatJump.qml` and the `TransportLoopBeatjump*` of the three skins.
+- The menu sandwich button went grey without its lines showing: the icon was the light SVG
+  `btn__menu.svg` over the grey background of the open menu. It is now drawn with the icon font and
+  coloured according to state (`PulseDeck` and `NeonDeck`; in `LateNightQML` it stays the same because
+  that theme does not have the icon font).
 
-## 11. Empaquetado
+## 11. Packaging
 
-- `packaging/CPackConfig.cmake`: build y empaquetado del `.msi` (MSVC + Ninja + WiX) y del `.deb`.
-  El `wix.exe` global es un *tool* de .NET y necesita `DOTNET_ROOT` apuntando al SDK.
-- `packaging/CPackDebFfmpegExtraAlternatives.cmake` (nuevo): permite las bibliotecas de FFmpeg
-  `-extra` como alternativas en las dependencias del `.deb`.
+- `packaging/CPackConfig.cmake`: build and packaging of the `.msi` (MSVC + Ninja + WiX) and of the
+  `.deb`. The global `wix.exe` is a .NET *tool* and needs `DOTNET_ROOT` pointing at the SDK.
+- `packaging/CPackDebFfmpegExtraAlternatives.cmake` (new): allows the FFmpeg
+  `-extra` libraries as alternatives in the `.deb` dependencies.
 
-Los scripts de build locales (`build_windows_release.cmd`, `CMakeSettings.json`) están en el
-`.gitignore` del proyecto, así que **no se incluyen**: cada uno arma su propio comando con los
-datos de la sección 12.
+The local build scripts (`build_windows_release.cmd`, `CMakeSettings.json`) are in the project's
+`.gitignore`, so **they are not included**: everyone builds their own command with the data of
+section 12.
 
-## 12. Cómo compilar y verificar
+## 12. How to build and verify
 
 ```powershell
-# Windows (MSVC + Ninja + vcpkg de buildenv), desde una consola con vcvars64
-cmake --build C:\ruta\build\x64__legacy --config RelWithDebInfo
-# y para el instalador:
+# Windows (MSVC + Ninja + vcpkg from buildenv), from a console with vcvars64
+cmake --build C:\path\build\x64__legacy --config RelWithDebInfo
+# and for the installer:
 cpack -G WIX -C RelWithDebInfo
 ```
 
@@ -270,399 +268,395 @@ cmake --build build --config RelWithDebInfo --parallel
 cpack -G DEB
 ```
 
-⚠️ **Nunca interrumpir una compilación** y, tras cambiar un *header* que forma parte de una clase,
-recompilar limpio (`--clean-first`) si aparecen crashes que cambian de sitio: un `.obj` viejo con el
-tamaño antiguo de la clase provoca corrupción de memoria (en `PENDIENTE.md` §2.1 está el caso real).
+⚠️ **Never interrupt a build** and, after changing a *header* that is part of a class,
+rebuild clean (`--clean-first`) if crashes that move around appear: an old `.obj` with the old class
+size causes memory corruption (the real case is in `PENDIENTE.md` §2.1).
 
-⚠️ **Al empaquetar el `.msi`, llamar `vcvars64.bat` en una línea aparte.** vcpkg copia las DLLs
-caminando el grafo de imports del ejecutable y necesita `dumpbin` en el `PATH`. Si se encadena todo
-en una sola línea de `cmd` —
+⚠️ **When packaging the `.msi`, call `vcvars64.bat` on a line of its own.** vcpkg copies the DLLs
+walking the executable's import graph and needs `dumpbin` in the `PATH`. If everything is chained
+on a single `cmd` line —
 
 ```bat
-rem MAL: cmd expande %PATH% antes de que vcvars64 corra, y el set pisa el PATH
+rem WRONG: cmd expands %PATH% before vcvars64 runs, and the set overwrites PATH
 cmd /c "call vcvars64.bat >nul && set "PATH=<cmake>;<ninja>;%PATH%" && cpack -G WIX"
 ```
 
-— el `set` escribe el `PATH` **anterior** a vcvars y borra el directorio de herramientas de MSVC
-(donde viven `dumpbin.exe` y `cl.exe`). La compilación no falla (CMake cachea las rutas absolutas de
-`cl.exe` dentro de `build.ninja`), pero el script de vcpkg sí busca `dumpbin` en el `PATH` y avisa
-sólo con un `resolve : Neither dumpbin, llvm-objdump nor objdump could be found`; CPack termina
-igual y **genera un MSI sin ninguna DLL**, que se instala bien y falla al abrir con
-`0xC0000135` (falta una DLL). Síntoma para reconocerlo: el MSI pesa mucho menos de lo normal
-(~74 MB en vez de ~115 MB). Conviene poner `where dumpbin || exit /b 1` antes de `cpack`.
-Detalle completo en `PENDIENTE.md` §6.17.
+— the `set` writes the `PATH` **previous** to vcvars and wipes the MSVC tools directory (where
+`dumpbin.exe` and `cl.exe` live). The build does not fail (CMake caches the absolute paths of
+`cl.exe` inside `build.ninja`), but the vcpkg script does look for `dumpbin` in the `PATH` and only
+warns with `resolve : Neither dumpbin, llvm-objdump nor objdump could be found`; CPack finishes all
+the same and **produces an MSI with no DLL at all**, which installs fine and fails to open with
+`0xC0000135` (a DLL is missing). Symptom to recognise it: the MSI weighs far less than usual
+(~74 MB instead of ~115 MB). It is worth putting `where dumpbin || exit /b 1` before `cpack`.
+Full detail in `PENDIENTE.md` §6.17.
 
-## 13. Notas
+## 13. Notes
 
-- **Estilo, no arte copiado:** el objetivo visual es el *estilo* de Serato/VirtualDJ. Todos los
-  recursos son originales o con licencia libre (Rajdhani y Font Awesome Free, SIL OFL / CC BY 4.0 /
-  MIT, con sus ficheros de licencia en `res/fonts/`). No se copia ningún fichero gráfico ni logotipo
-  de VirtualDJ/Serato.
-- **Claves de API:** no hay ninguna en el repositorio. La del AutoDJ con IA se guarda en las
-  preferencias del usuario (bóveda del sistema vía QtKeychain).
-- **`PENDIENTE.md`** es la bitácora de trabajo: contiene rutas locales, capturas de log y el porqué de
-  cada decisión. Sirve de respaldo, no como documentación para terceros.
+- **Style, not copied art:** the visual goal is the *style* of Serato/VirtualDJ. All the assets are
+  original or freely licensed (Rajdhani and Font Awesome Free, SIL OFL / CC BY 4.0 / MIT, with their
+  licence files in `res/fonts/`). No graphic file or logo is copied from VirtualDJ/Serato.
+- **API keys:** there is none in the repository. The one for the AI AutoDJ is stored in the user's
+  preferences (system vault via QtKeychain).
+- **`PENDIENTE.md`** is the work log: it contains local paths, log captures and the reason behind
+  every decision. It serves as a backup, not as documentation for third parties.
 
 ---
 
-## 12. Generacion de stems (pestana Stems)
+## 12. Stem generation (Stems tab)
 
-Mixxx ya sabia **reproducir** stems, pero no crearlos. Ahora tambien los genera:
+Mixxx already knew how to **play** stems, but not how to create them. Now it generates them too:
 
-- **Worker externo** `res/stems/stems_worker.py` (+ `stem_mp4.py`): separa con
-  `demucs-onnx` (ONNX Runtime, sin PyTorch) y escribe el contenedor Native
-  Instruments: 5 pistas (la mezcla y los cuatro stems) y el manifiesto JSON en
-  `moov/udta/stem`, con los `stco`/`co64` parcheados porque el `moov` crece. El
-  progreso se publica como lineas (`STATUS`, `PROGRESS`, `RESULT`, `DONE`,
-  `ERROR`) y el subcomando `probe` informa del entorno para poder avisar antes de
-  empezar.
-- **Servicio** `src/stems/stemgenerator.{h,cpp}`: cola de un trabajo a la vez,
-  pospuesta mientras hay musica sonando, lanzada con QProcess, con las DLL de
-  CUDA de los wheels de Python anadidas al PATH y salida junto a la pista (por
-  defecto) o en `<config>/stems/<hash>/`. La cola se muestra con
+- **External worker** `res/stems/stems_worker.py` (+ `stem_mp4.py`): separates with
+  `demucs-onnx` (ONNX Runtime, no PyTorch) and writes the Native Instruments container: 5 tracks
+  (the mix and the four stems) and the JSON manifest in `moov/udta/stem`, with the `stco`/`co64`
+  patched because the `moov` grows. Progress is published as lines (`STATUS`, `PROGRESS`, `RESULT`,
+  `DONE`, `ERROR`) and the `probe` subcommand reports on the environment so it can warn before
+  starting.
+- **Service** `src/stems/stemgenerator.{h,cpp}`: a queue of one job at a time, postponed while music
+  is playing, launched with QProcess, with the CUDA DLLs from the Python wheels added to the PATH and
+  output next to the track (by default) or in `<config>/stems/<hash>/`. The queue is shown with
   `src/stems/stemqueuemodel.{h,cpp}`.
-- **Interfaz**: pestana **Stems** en Preferencias (`res/qml/Settings/Stems.qml`)
-  con el aviso de hardware y la cola con progreso, y entradas
-  *Stems > Generate stems / Regenerate stems* en el menu contextual de la
-  biblioteca (WTrackMenu).
+- **Interface**: **Stems** tab in Preferences (`res/qml/Settings/Stems.qml`) with the hardware notice
+  and the queue with progress, and the *Stems > Generate stems / Regenerate stems* entries in the
+  library context menu (WTrackMenu).
 
-Aviso que muestra la pestana: sin GPU la separacion se hace en CPU, consume mucho
-mas y tarda unas cinco veces mas. Medido en el equipo de desarrollo (pista de
-243 s, `htdemucs` fp32): **22.4 s con RTX 3060 (10.9x tiempo real)** frente a
-**102.4 s en CPU (2.4x)**, con la suma de stems a -30.9 dB del original en ambos
-casos.
+Notice shown by the tab: without a GPU the separation is done on the CPU, uses much more and takes
+about five times as long. Measured on the development machine (243 s track, `htdemucs` fp32):
+**22.4 s with an RTX 3060 (10.9x real time)** against **102.4 s on CPU (2.4x)**, with the sum of
+stems at -30.9 dB from the original in both cases.
 ---
 
-# 14. Deck de PulseDeck tomado de la skin experimental (15-10)
+# 14. PulseDeck deck taken from the experimental skin (15-10)
 
-- **Bug de arranque de las skins** (`Toolbar.qml` en PulseDeck, NeonDeck y LateNightQML): un
-  `function onEnabledChanged()` dentro de un `Connections` choca con la propiedad `enabled` que
-  `Connections` ya declara, y el compilador de QML rechaza el fichero entero ("Duplicate method
-  name"), asi que **la skin no cargaba**. Sustituido por un `Binding` que espeja
-  `stemGenerator.enabled` en el boton de stems.
-- **Controles de tonalidad solapados**: el hueco de `KeyControlsPlaceholder` era elastico
-  (76-111 px) y el `RowLayout` comprimia a sus hijos cuando la fila no cabia. Ahora el hueco es
-  fijo (76 px) en los tres `FullDeck.qml` y en los tres `TransportLoopBeatjumpCompact.qml`, y los
-  controles de vinilo (158 px de ancho fijo) tienen fila propia en PulseDeck o se ocultan
-  mientras no caben en el resto de skins y en las filas compactas.
-- **Deck de PulseDeck** (`res/skins/PulseDeck/Deck/FullDeck.qml`): es la composicion de
-  `LateNightQML` (plato grande con las filas de titulo al lado, transporte debajo, pitch en el
-  borde) manteniendo los adornos de PulseDeck (tira de acento del color del deck, color de deck
-  en BPM y llave, iconos, insignia A/B/C/D) y el espejado de los decks B/D, anadido al deck
-  copiado como `mirrorControls`. `fullDeckHeight` pasa de 230 a 206 px, que es lo que mide.
-- **Boton de sync**: dice **SYNC** en vez de dibujar un glifo (`RatePlaceholder.qml` y
-  `RateCompact.qml`), como VirtualDJ.
-- **Worker de stems**: `StemGenerator::resolvedWorkerScript()` busca ahora tambien junto al
-  ejecutable, en `<app>/../share/mixxx/stems/` y en el directorio de configuracion: Mixxx solo
-  conoce la ruta de recursos si se le pasa `--resource-path`, y sin ella resolvia
-  `stems_worker.py` relativo al directorio actual (de ahi el "No se encuentra .../stems_worker.py"
-  al comprobar el entorno).
-- **`wsl_rebuild_deb.sh`** en la raiz del repo: compila y empaqueta el `.deb` dentro de WSL
-  reutilizando `/home/mixxx/mixxx/build` y copia el paquete a `dist\`.
-- **Iconos del panel Track Advisor**: la skin experimental (`LateNightQML`) no tenia el mapa de
-  glifos de Font Awesome en su tema, asi que el icono ✨ de la cabecera y el boton ⟳ de recargar
-  **no se dibujaban** (sus `iconName` no resolvian). Se anadio el mapa (64 glifos) y la familia
-  `iconFontFamily` a su tema. Ademas, el boton de recargar tiene ahora ancho minimo fijo en las
-  tres skins, para que una cabecera estrecha no lo comprima hasta hacerlo desaparecer.
-- **Columna Stems de la biblioteca**: quedaba al final porque la colocacion se marcaba como hecha
-  aunque no hubiera podido moverse. Ahora la marca es una **version** (`stems_column_placed = 2`):
-  los perfiles que pasaron por la regla anterior se colocan **una vez mas** y a partir de ahi se
-  respeta donde la arrastre el usuario.
-- **Panel STEMS de la barra**: pulsar el boton con el panel abierto **no lo cerraba** (volvia a
-  abrirlo). Ahora usa el mismo ayudante que los desplegables de ajustes, con la marca
-  `wasPopupOpenOnPress` en el boton para no reabrirlo con el clic que acaba de cerrarlo.
-- **Entorno de Python de los stems**: se anaden `res/stems/requirements.txt` y
-  `res/stems/setup_venv.py`, que crean el entorno en `<config>/stems/venv` (la carpeta que Mixxx
-  consulta por defecto) e instalan ONNX Runtime y el separador. Antes no habia forma de instalarlo
-  desde el repo.
+- **Skin startup bug** (`Toolbar.qml` in PulseDeck, NeonDeck and LateNightQML): a
+  `function onEnabledChanged()` inside a `Connections` clashes with the `enabled` property that
+  `Connections` already declares, and the QML compiler rejects the whole file ("Duplicate method
+  name"), so **the skin did not load**. Replaced by a `Binding` that mirrors
+  `stemGenerator.enabled` on the stems button.
+- **Overlapping key controls**: the slot of `KeyControlsPlaceholder` was stretchy
+  (76-111 px) and the `RowLayout` squeezed its children when the row did not fit. Now the slot is
+  fixed (76 px) in the three `FullDeck.qml` and in the three `TransportLoopBeatjumpCompact.qml`, and the
+  vinyl controls (158 px fixed width) have a row of their own in PulseDeck or hide
+  while they do not fit in the rest of the skins and in the compact rows.
+- **PulseDeck deck** (`res/skins/PulseDeck/Deck/FullDeck.qml`): it is the composition of
+  `LateNightQML` (large platter with the title rows beside it, transport below, pitch on the
+  edge) keeping PulseDeck's ornaments (accent strip in the deck colour, deck colour
+  in BPM and key, icons, A/B/C/D badge) and the mirroring of the B/D decks, added to the copied
+  deck as `mirrorControls`. `fullDeckHeight` goes from 230 to 206 px, which is what it measures.
+- **Sync button**: it says **SYNC** instead of drawing a glyph (`RatePlaceholder.qml` and
+  `RateCompact.qml`), like VirtualDJ.
+- **Stems worker**: `StemGenerator::resolvedWorkerScript()` now also looks next to the
+  executable, in `<app>/../share/mixxx/stems/` and in the configuration directory: Mixxx only
+  knows the resource path if `--resource-path` is passed to it, and without it it resolved
+  `stems_worker.py` relative to the current directory (hence the "No se encuentra .../stems_worker.py"
+  when checking the environment).
+- **`wsl_rebuild_deb.sh`** at the repo root: builds and packages the `.deb` inside WSL
+  reusing `/home/mixxx/mixxx/build` and copies the package to `dist\`.
+- **Track Advisor panel icons**: the experimental skin (`LateNightQML`) did not have the
+  Font Awesome glyph map in its theme, so the ✨ icon of the header and the ⟳ reload button
+  **were not drawn** (their `iconName`s did not resolve). The map was added (64 glyphs) and the
+  `iconFontFamily` family to its theme. Besides, the reload button now has a fixed minimum width in the
+  three skins, so that a narrow header does not squeeze it until it disappears.
+- **Stems column of the library**: it stayed at the end because the placement was marked as done
+  even if it had not been able to move. Now the mark is a **version** (`stems_column_placed = 2`):
+  the profiles that went through the previous rule are placed **one more time** and from then on
+  wherever the user drags it is respected.
+- **STEMS panel of the toolbar**: pressing the button with the panel open **did not close it** (it
+  reopened it). Now it uses the same helper as the settings drop-downs, with the mark
+  `wasPopupOpenOnPress` on the button so as not to reopen it with the click that has just closed it.
+- **Python environment for the stems**: `res/stems/requirements.txt` and
+  `res/stems/setup_venv.py` are added, which create the environment in `<config>/stems/venv` (the
+  folder Mixxx queries by default) and install ONNX Runtime and the separator. Before there was no way
+  to install it from the repo.
 
 ---
 
-# 15. Motor de stems propio, instalable desde Preferencias
+# 15. Stem engine of its own, installable from Preferences
 
-Generar stems exigia tener Python y las librerias puestas a mano. Ahora la pagina
-**Stems** ofrece **descargar un motor completo** que lleva dentro su propio
-interprete, ONNX Runtime, el separador, `ffmpeg` y el modelo, de modo que no hace
-falta nada instalado en el equipo.
+Generating stems required having Python and the libraries set up by hand. Now the **Stems** page
+offers to **download a complete engine** that carries its own interpreter, ONNX Runtime, the
+separator, `ffmpeg` and the model inside, so that nothing needs to be installed on the machine.
 
-- **La pagina viva es C++, no QML**: `src/preferences/dialog/dlgprefstems.cpp` (Qt Widgets),
-  registrada en `dlgpreferences.cpp`. El fichero `res/qml/Settings/Stems.qml` **no se muestra**
-  (el QML va incrustado en el ejecutable y esa pagina es la de C++). Por eso "acorde al skin"
-  significa usar los mismos widgets que el resto de la pagina (`QGroupBox`, `QFormLayout`,
-  `QListWidget`, `QProgressBar`, `QPushButton`), no `Theme`/QML.
-- **Instalador** `src/stems/stemengineinstaller.{h,cpp}` y `src/stems/ziparchive.{h,cpp}`: lee el
-  manifiesto `res/stems/engine.json` (variantes CPU/CUDA y modelos con sus tamanos), comprueba la
-  red **antes** de empezar host por host, descarga con reintentos **desde cero** (nunca reanuda un
-  fichero cortado), verifica el `sha256`, descomprime los ZIP con zlib en rebanadas de 50 ms para
-  no congelar la interfaz, escribe el `_pth` del interprete embebido (`../app`,
-  `../site-packages`), copia el worker y el sustituto de `huggingface_hub`, y deja
-  `installed.json` con version, variante y modelo.
-- **Variante sugerida**: una sonda de GPU **asincrona** (nunca bloquea el arranque) deja puesta la
-  variante CUDA cuando hay tarjeta NVIDIA, salvo que el usuario elija otra o ya haya motor
-  instalado.
-- **El generador prefiere el motor**: `StemGenerator::resolvedPython()`, `resolvedFfmpeg()` y
-  `resolvedWorkerScript()` miran primero dentro de la carpeta del motor, y el `PATH` del trabajo
-  incluye los `bin` de NVIDIA que vienen en los wheels.
-- **Rutas de recursos**: se usa `m_pConfig->getResourcePath()` (la ruta ya resuelta, que en un
-  arbol de desarrollo sale de `CMakeCache.txt`), no `CmdlineArgs::getResourcePath()`, que solo
-  tiene valor si se pasa `--resource-path`. Con lo anterior, en un arbol de desarrollo la pagina
-  no encontraba ni el manifiesto ni el worker.
-- **Al terminar la instalacion** la pagina vuelve a sondear el entorno, para que la caja
-  *Environment* y el estado del generador reflejen el motor recien instalado sin tener que cerrar
-  y abrir Preferencias.
-- **Aislamiento**: el paquete se llama, se instala y se registra aparte (`Mixxx Stem Engine` con
-  GUID propio; `.deb` `mixxx-stem-engine` en `/opt/mixxx-stem-engine`), de modo que probarlo **no
-  sustituye** un Mixxx instalado. Scripts de esta fase: `build-msi.cmd`, `package-msi.cmd`,
-  `wsl-build-deb.sh` y `compile-check.cmd`.
-- **Trampa del build que costo un rato**: `dlgprefstems.cpp` incluye su `moc_dlgprefstems.cpp` a
-  mano y Ninja no siempre registra esa dependencia. Si se anaden miembros a `DlgPrefStems`, el
-  objeto de `dlgpreferences.cpp` se queda con el **tamano viejo de la clase**: `new DlgPrefStems`
-  reserva de menos y el constructor escribe fuera, con fallo de acceso en `Qt6Core.dll` al abrir
-  Preferencias. Hay que borrar los `.obj` afectados (los que incluyen la cabecera) y recompilar.
-- **Comprobado**: instalando desde Mixxx la variante CPU (237,9 MB, 16 ficheros) la carpeta del
-  motor queda en 576,9 MB y su interprete embebido importa `onnxruntime`, `numpy`, `soundfile`,
-  `soxr` e `imageio_ffmpeg` (el `ffmpeg` de 87 MB viaja dentro del wheel) sin ningun Python en el
-  equipo.
-- **Pendiente**: en Linux la pagina avisa y no ofrece instalar, porque el manifiesto es
-  `win_amd64`; hace falta un manifiesto con los `.tar.gz` de python-build-standalone, otro
-  `ffmpeg` y `chmod +x` al descomprimir.
+- **The live page is C++, not QML**: `src/preferences/dialog/dlgprefstems.cpp` (Qt Widgets),
+  registered in `dlgpreferences.cpp`. The file `res/qml/Settings/Stems.qml` **is not shown**
+  (the QML is embedded in the executable and that page is the C++ one). That is why "matching the
+  skin" means using the same widgets as the rest of the page (`QGroupBox`, `QFormLayout`,
+  `QListWidget`, `QProgressBar`, `QPushButton`), not `Theme`/QML.
+- **Installer** `src/stems/stemengineinstaller.{h,cpp}` and `src/stems/ziparchive.{h,cpp}`: reads the
+  manifest `res/stems/engine.json` (CPU/CUDA variants and models with their sizes), checks the
+  network **before** starting host by host, downloads with retries **from scratch** (never resumes a
+  cut file), verifies the `sha256`, unpacks the ZIPs with zlib in 50 ms slices so as not to freeze the
+  interface, writes the `_pth` of the embedded interpreter (`../app`, `../site-packages`), copies the
+  worker and the `huggingface_hub` substitute, and leaves `installed.json` with version, variant and
+  model.
+- **Suggested variant**: an **asynchronous** GPU probe (never blocks startup) leaves the CUDA
+  variant set when there is an NVIDIA card, unless the user chooses another one or an engine is
+  already installed.
+- **The generator prefers the engine**: `StemGenerator::resolvedPython()`, `resolvedFfmpeg()` and
+  `resolvedWorkerScript()` look first inside the engine folder, and the job's `PATH` includes the
+  NVIDIA `bin`s that come in the wheels.
+- **Resource paths**: `m_pConfig->getResourcePath()` is used (the already resolved path, which in a
+  development tree comes from `CMakeCache.txt`), not `CmdlineArgs::getResourcePath()`, which only has
+  a value if `--resource-path` is passed. With the previous code, in a development tree the page
+  found neither the manifest nor the worker.
+- **When the installation finishes** the page probes the environment again, so that the
+  *Environment* box and the generator status reflect the freshly installed engine without having to
+  close and open Preferences.
+- **Isolation**: the package is called, installed and registered separately (`Mixxx Stem Engine` with
+  its own GUID; `.deb` `mixxx-stem-engine` in `/opt/mixxx-stem-engine`), so that trying it **does not
+  replace** an installed Mixxx. Scripts of this phase: `build-msi.cmd`, `package-msi.cmd`,
+  `wsl-build-deb.sh` and `compile-check.cmd`.
+- **Build trap that cost a while**: `dlgprefstems.cpp` includes its `moc_dlgprefstems.cpp` by
+  hand and Ninja does not always record that dependency. If members are added to `DlgPrefStems`, the
+  object of `dlgpreferences.cpp` is left with the **old size of the class**: `new DlgPrefStems`
+  reserves too little and the constructor writes outside, with an access fault in `Qt6Core.dll` when
+  opening Preferences. The affected `.obj`s (the ones that include the header) have to be deleted and
+  rebuilt.
+- **Verified**: installing the CPU variant from Mixxx (237.9 MB, 16 files) the engine folder
+  ends up at 576.9 MB and its embedded interpreter imports `onnxruntime`, `numpy`, `soundfile`,
+  `soxr` and `imageio_ffmpeg` (the 87 MB `ffmpeg` travels inside the wheel) with no Python at all on
+  the machine.
+- **Pending**: on Linux the page warns and does not offer to install, because the manifest is
+  `win_amd64`; a manifest with the python-build-standalone `.tar.gz` files is needed, another
+  `ffmpeg` and `chmod +x` when unpacking.
 
-## 16. El fallo al escribir el contenedor (WinError 2)
+## 16. The failure when writing the container (WinError 2)
 
-Sintoma reportado: la separacion avanza, llega a *encoding and writing the container* y termina
-con `writing the container failed: [WinError 2] El sistema no puede encontrar el archivo
-especificado`. No se generaba ningun `.stem.mp4`.
+Symptom reported: the separation advances, reaches *encoding and writing the container* and ends
+with `writing the container failed: [WinError 2] El sistema no puede encontrar el archivo
+especificado`. No `.stem.mp4` was generated.
 
-- **Causa**: `stem_mp4.read_metadata()` leia las etiquetas con **`ffprobe`**, un programa que el
-  motor **no** trae (en `imageio_ffmpeg` solo viaja el codificador). Buscaba un `ffprobe` junto al
-  `ffmpeg`, luego en el `PATH` y, si no lo encontraba, se quedaba con el nombre pelado `ffprobe`
-  y lo lanzaba: eso es un `[WinError 2]`, y ocurria **despues** de la separacion, en el ultimo
-  paso del trabajo. En el equipo de desarrollo no se veia porque hay un `ffprobe` del sistema
-  (winget) en el `PATH`; en un portatil sin ffmpeg instalado, siempre.
-- **Reproducido y comprobado**: con el `PATH` sin ffmpeg y la ruta de ffmpeg rota a proposito, el
-  worker instalado da exactamente el error del usuario (salida 6); el mismo comando con el codigo
-  arreglado termina en `DONE` y deja un `.stem.mp4` de 1,9 MB cuyo propio verificador acepta
-  (5 pistas, manifiesto y tablas de offsets correctas).
-- **Arreglo, en tres capas**: `read_metadata()` pide las etiquetas al propio `ffmpeg`
-  (`-f ffmetadata`), que es el unico programa que el motor garantiza, y nunca deja caer un trabajo
-  por las etiquetas; el worker resuelve el codificador con `resolve_ffmpeg()` (si lo que le llega
-  no es un programa arrancable, se lo pide a `imageio_ffmpeg`, que sabe donde esta el suyo) y lo
-  comprueba **antes** de separar, para no perder minutos de trabajo por una ruta; y
-  `StemGenerator::resolvedFfmpeg()` ya no propaga una ruta inexistente.
-- **El primer sospechoso no era el culpable**: `StemEngineInstaller::ffmpegFor()` devolvia el
-  primer fichero de `binaries` que no fuese `.txt`, y ahi `README.md` va antes que
-  `ffmpeg-win-x86_64-v7.1.exe`. Se corrijo igual (busca por el prefijo `ffmpeg`), pero un `.md`
-  no da error 2 sino **193** (`no es una aplicacion Win32 valida`), asi que no era el fallo
-  reportado.
-- **El worker ahora viaja con la aplicacion**: `resolvedWorkerScript()` prefiere la copia de
-  `share/mixxx/stems/` antes que la que quedo dentro del motor. Antes, un arreglo del worker solo
-  llegaba al usuario volviendo a descargar 240 MB de motor; ahora basta con instalar el Mixxx
-  nuevo. Para que el worker funcione desde cualquiera de las dos carpetas, la aplicacion le pasa
-  `STEM_ENGINE_MODELS` y el sustituto de `huggingface_hub` sabe resolver la carpeta `models` por
-  la variable, por su propia ubicacion o por la del interprete.
-- **Paquete de pruebas**: el MSI se empaqueta con `CPACK_PACKAGE_VERSION=2.7.1` (el proyecto es
-  2.7.0) porque con el mismo GUID de actualizacion y la misma version Windows rechaza instalar
-  encima con el error 1638.
-- **El `.deb` de pruebas ahora se puede lanzar y desinstalar**: como se instala bajo `/opt`, no
-  habia nada en el `PATH` ni en el menu, y parecia que "no se instalaba" (`mixxx` no era un
-  comando) ni se podia quitar (`apt remove mixxx` no es el nombre del paquete). El paquete aislado
-  lleva `packaging/isolated-deb/{postinst,postrm}` (pasados con `CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA`
-  desde `wsl-build-deb.sh`): el `postinst` crea `/usr/local/bin/mixxx-stem-engine` y una entrada de
-  menu propia —`Mixxx (motor de stems, pruebas)`, con `Exec` e `Icon` absolutos—, y el `postrm` la
-  retira. El paquete oficial no usa nada de esto.
-- **Detalle del `sed` del `postinst`**: los patrones no van anclados al final de la linea
-  (`^Name=Mixxx.*`) porque el `.desktop` del repositorio sale con retorno de carro en Windows y un
-  `$` anclado no casa con nada.
+- **Cause**: `stem_mp4.read_metadata()` read the tags with **`ffprobe`**, a program that the
+  engine **does not** ship (only the encoder travels in `imageio_ffmpeg`). It looked for an `ffprobe`
+  next to `ffmpeg`, then in the `PATH` and, if it did not find it, it kept the bare name `ffprobe`
+  and launched it: that is a `[WinError 2]`, and it happened **after** the separation, in the last
+  step of the job. On the development machine it was not seen because there is a system `ffprobe`
+  (winget) in the `PATH`; on a laptop with no ffmpeg installed, always.
+- **Reproduced and verified**: with ffmpeg out of the `PATH` and the ffmpeg path broken on purpose,
+  the installed worker gives exactly the user's error (exit code 6); the same command with the fixed
+  code ends in `DONE` and leaves a 1.9 MB `.stem.mp4` whose own verifier accepts
+  (5 tracks, manifest and correct offset tables).
+- **Fix, in three layers**: `read_metadata()` asks `ffmpeg` itself for the tags
+  (`-f ffmetadata`), which is the only program the engine guarantees, and never drops a job
+  because of the tags; the worker resolves the encoder with `resolve_ffmpeg()` (if what it gets
+  is not a launchable program, it asks `imageio_ffmpeg`, which knows where its own is) and checks it
+  **before** separating, so as not to lose minutes of work because of a path; and
+  `StemGenerator::resolvedFfmpeg()` no longer propagates a non-existent path.
+- **The first suspect was not the culprit**: `StemEngineInstaller::ffmpegFor()` returned the
+  first file of `binaries` that was not `.txt`, and there `README.md` comes before
+  `ffmpeg-win-x86_64-v7.1.exe`. It was fixed all the same (it looks for the `ffmpeg` prefix), but an
+  `.md` does not give error 2 but **193** (`no es una aplicacion Win32 valida`), so it was not the
+  reported failure.
+- **The worker now travels with the application**: `resolvedWorkerScript()` prefers the copy in
+  `share/mixxx/stems/` over the one that was left inside the engine. Before, a fix in the worker only
+  reached the user by downloading 240 MB of engine again; now installing the new Mixxx is enough. For
+  the worker to work from either of the two folders, the application passes it
+  `STEM_ENGINE_MODELS` and the `huggingface_hub` substitute can resolve the `models` folder from the
+  variable, from its own location or from the interpreter's one.
+- **Test package**: the MSI is packaged with `CPACK_PACKAGE_VERSION=2.7.1` (the project is
+  2.7.0) because with the same upgrade GUID and the same version Windows refuses to install
+  on top with error 1638.
+- **The test `.deb` can now be launched and uninstalled**: as it installs under `/opt`, there
+  was nothing in the `PATH` nor in the menu, and it looked like it "was not installed" (`mixxx` was
+  not a command) and it could not be removed either (`apt remove mixxx` is not the package name).
+  The isolated package carries `packaging/isolated-deb/{postinst,postrm}` (passed with
+  `CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA` from `wsl-build-deb.sh`): the `postinst` creates
+  `/usr/local/bin/mixxx-stem-engine` and a menu entry of its own —`Mixxx (motor de stems, pruebas)`,
+  with absolute `Exec` and `Icon`—, and the `postrm` removes it. The official package uses none of
+  this.
+- **Detail of the `postinst` `sed`**: the patterns are not anchored to the end of the line
+  (`^Name=Mixxx.*`) because the repository's `.desktop` comes out with a carriage return on Windows
+  and an anchored `$` matches nothing.
 
-## 17. Biblioteca y panel lateral borrosos con escalado fraccionario
+## 17. Blurry library and side panel at fractional scaling
 
-Sintoma reportado: en un portatil de 1080p con la pantalla escalada (el otro equipo, a 100 %, se ve
-bien) **la tipografia de la biblioteca y del panel lateral** (arbol de fuentes, pistas, AutoDJ) se
-ve borrosa, mientras la piel QML y las ondas se ven nitidas.
+Symptom reported: on a 1080p laptop with the screen scaled (the other machine, at 100 %, looks
+fine) **the type of the library and of the side panel** (font tree, tracks, AutoDJ) looks blurry,
+while the QML skin and the waveforms look sharp.
 
-- **Causa**: en las pieles QML la biblioteca es un arbol de **Qt Widgets** que no se dibuja en
-  pantalla, sino que se **pinta** dentro de un item de QML (`QmlLegacyLibraryItem`, con
-  `WA_DontShowOnScreen`). `renderOffscreen()` creaba el `QPixmap` de **un pixel por pixel logico**
-  (`QPixmap(size)`, sin `devicePixelRatio`) y `paint()` lo dibujaba tal cual. Con la ventana al 150 %
-  el escenario amplia ese mapa 1,5 veces: la biblioteca se ve como una imagen magnificada, y solo
-  ella, porque el resto de la ventana lo dibuja el motor de QML a resolucion nativa. A 100 % no hay
-  ampliacion y por eso el otro equipo se ve bien.
-- **Arreglo**: el mapa se crea del tamano del **dispositivo** (`ceil(lado * devicePixelRatio)`) con
-  su `devicePixelRatio` puesto, de modo que el pintor dibuja los widgets a la resolucion de la
-  pantalla y `paint()` lo pone pixel por pixel del dispositivo, sin magnificar. La disposicion de los
-  widgets sigue en pixeles logicos (los clics siguen cuadrando porque `QQuickItem` entrega las
-  posiciones en esas mismas unidades). Se anade `itemChange(ItemDevicePixelRatioHasChanged)` para
-  volver a pintar al mover la ventana a una pantalla con otra escala.
-- **Comprobado**: con `QT_SCALE_FACTOR=1.5`, mismo perfil, instantaneas del mismo recorte del arbol
-  ampliadas 4 veces: antes los trazos salen dobles y con flecos de color (mapa ampliado), despues
-  limpios. Con el escalado a 100 % el resultado es identico al de antes del cambio.
+- **Cause**: in the QML skins the library is a **Qt Widgets** tree that is not drawn on
+  screen, but **painted** inside a QML item (`QmlLegacyLibraryItem`, with
+  `WA_DontShowOnScreen`). `renderOffscreen()` created the `QPixmap` at **one pixel per logical pixel**
+  (`QPixmap(size)`, without `devicePixelRatio`) and `paint()` drew it as it was. With the window at
+  150 % the scene graph scales that map 1.5 times: the library looks like a magnified image, and only
+  it, because the rest of the window is drawn by the QML engine at native resolution. At 100 % there
+  is no magnification and that is why the other machine looks fine.
+- **Fix**: the map is created at the size of the **device** (`ceil(side * devicePixelRatio)`) with
+  its `devicePixelRatio` set, so that the painter draws the widgets at the screen resolution and
+  `paint()` places it pixel by pixel of the device, without magnifying. The layout of the
+  widgets stays in logical pixels (clicks still line up because `QQuickItem` delivers the
+  positions in those same units). `itemChange(ItemDevicePixelRatioHasChanged)` is added to
+  repaint when the window is moved to a screen with another scale.
+- **Verified**: with `QT_SCALE_FACTOR=1.5`, same profile, snapshots of the same crop of the tree
+  enlarged 4 times: before, the strokes come out doubled and with colour fringes (an enlarged map),
+  afterwards clean. With scaling at 100 % the result is identical to the one before the change.
 
-## 18. El motor en Linux
+## 18. The engine on Linux
 
-Hasta aqui la pagina de Stems avisaba en Linux y no ofrecia instalar, porque el manifiesto era
-`win_amd64`. Ahora hay una lista de ficheros por plataforma.
+Until here the Stems page warned on Linux and did not offer to install, because the manifest was
+`win_amd64`. Now there is a list of files per platform.
 
-- **Manifiesto nuevo** `res/stems/engine-linux.json`, generado con `tools/make_manifest.py`
-  (la misma herramienta del laboratorio, con tres cambios):
-  - acepta **varias etiquetas `--platform`**, porque pip no expande una familia de `manylinux` en
-    las demas y estos paquetes no coinciden en ninguna: numpy publica `manylinux_2_28`,
-    `imageio-ffmpeg` sigue en `manylinux2014` y `soxr` en `manylinux_2_27`;
-  - `--runtime-strip-prefix python`: el interprete de python-build-standalone viene dentro de un
-    unico directorio `python/`, y el motor lo quiere en `runtime/bin/python3`;
-  - `--no-nvidia`: la variante CUDA de Linux resuelve a `onnxruntime-gpu` 1.26 con ruedas cu12
-    mientras la de CPU va a 1.31, y como los dos instalan el mismo paquete `onnxruntime` se
-    pisarian los ficheros entre si. Se deja fuera a proposito, en vez de ofrecer un motor a medias.
-  - Contenido: interprete `cpython 3.11.17` (46,7 MB), 14 wheels y los mismos modelos. Instalacion
-    de 438,1 MB con el modelo fp32 y 287,3 MB con el fp16.
-- **El instalador** (`stemengineinstaller.{h,cpp}`):
-  - elige el manifiesto por plataforma (`engine.json` en Windows, `engine-linux.json` en el resto,
-    con vuelta al primero si no esta);
-  - no se queda con una variante que la lista no tenga: sin esto, la sugerencia automatica de CUDA
-    dejaba la seleccion apuntando a una variante inexistente en Linux;
-  - le pasa al interprete `PYTHONPATH` con la carpeta `site-packages` del motor. En Windows eso lo
-    hace el `._pth` que escribe la instalacion; en Linux no existe tal fichero;
-  - da el **permiso de ejecucion** al `ffmpeg` de `imageio_ffmpeg`, que viaja dentro de un ZIP y por
-    tanto sin el bit de ejecucion;
-  - **cancelar** ya no se confunde con fallar: la extraccion interrumpida no llama a `finish()` y la
-    instalacion no queda marcada como hecha.
-- **Lector de tar** `src/stems/tararchive.{h,cpp}`: gzip sobre zlib y tar con las extensiones que
-  usan las herramientas de empaquetado (ustar, nombre y enlace largos de GNU, cabeceras PAX),
-  **enlaces simbolicos y duros**, modo de cada fichero y recorte de un prefijo. Nada se escribe
-  fuera del destino, igual que en el lector de ZIP. La extraccion informa del avance en bytes
-  comprimidos y se puede interrumpir desde la llamada, que es lo que usa la cancelacion.
-- **Pruebas** `src/test/tararchive_test.cpp`, dentro de la suite del proyecto y sin ficheros de
-  apoyo (el test construye el tar y lo comprime el mismo): recorte de prefijo, permiso de
-  ejecucion, enlace relativo, nombre largo, rechazo de rutas que salen del destino, extraccion sin
-  prefijo y cancelacion. **Las cuatro pasan en Windows y en Linux** (`mixxx-test
-  --gtest_filter=TarArchiveTest.*`), que es la unica forma de comprobar los enlaces y los permisos.
-  Dos avisos que costaron una vuelta: `QFile::readAll()` sin `open()` devuelve vacio, y en Qt 6
-  `symLinkTarget()` devuelve la ruta **absoluta** resuelta, asi que el test lee el enlace con
-  `readlink()` para comprobar que se guardo relativo.
-- **Validacion de verdad** `tools/validate_linux_engine.py`: baja el interprete, los wheels y el
-  modelo desde el propio manifiesto, coloca el worker y el sustituto de `huggingface_hub` como lo
-  hace el instalador, da el permiso al `ffmpeg`, y separa una pista de prueba de 12 s para escribir
-  un `.stem.mp4`. Es lo que responde a la pregunta que el manifiesto no puede: si el motor arranca
-  en Linux. **Comprobado en WSL (Ubuntu 24.04)**: interprete 3.11.17, 14 wheels, `ffmpeg-linux-x86_64-v7.0.2`
-  del propio wheel, separacion de 12 s en 19,9 s de CPU y un `.stem.mp4` de 1,9 MB que su
-  verificador acepta (5 pistas, manifiesto y tablas de offsets).
-- **Comprobado por el usuario**: la generacion de stems funciona **en Linux** instalando el motor desde
-  Preferencias y **en Windows**, o sea que el camino completo del motor en Linux (manifiesto,
-  descarga, `tar.gz` con enlaces, permisos y ejecucion) esta validado tambien desde la aplicacion,
-  no solo con el script de validacion.
-- **Lo que sigue sin explicacion**: unos iconos en negro en la seccion Mic/Aux en Linux. Se ha
-  descartado que falten los SVG (estan en el paquete), que haya discrepancias de mayusculas en las
-  rutas (128 referencias revisadas, 0 discrepancias) y que algun paquete declarado no exista (71 de
-  71 correctos). Falta el dato de la maquina afectada.
-
-
-## 19. El paquete de Windows que no arrancaba (objetos obsoletos, otra vez)
-
-El MSI 2.7.3 **moria al arrancar en Windows**: se veia la pantalla de inicio y desaparecia. En
-Linux el mismo codigo iba bien, que fue la primera pista (en Linux GCC lleva ficheros de
-dependencias; con MSVC y Ninja no siempre).
-
-- **Diagnostico**: el registro de eventos de Windows dio el modulo que falla —
-  `Qt6Core.dll`, `0xc0000005` — que con un desplazamiento tan bajo es un puntero corrompido, no un
-  fallo de Qt. La prueba que lo separo: el Mixxx instalado en `C:\Program Files` (una compilacion
-  anterior, misma musica, mismo escaneo) **arrancaba bien**, asi que el fallo era de esta
-  compilacion.
-- **Causa**: `stemgenerator.cpp.obj` era **anterior** a `stemengineinstaller.h`. Esa cabecera habia
-  crecido (`m_unpackCancelled`, `manifestHasVariant`, `stripPrefix`) y ese fichero es justo el que
-  construye el instalador, asi que reservaba el tamano viejo de la clase y el constructor escribia
-  fuera de la memoria reservada. La corrupcion aparecia mas tarde, al escanear la biblioteca, y por
-  eso el sintoma era "se queda en el logo".
-- **Por que Ninja no lo vio**: los fuentes se estaban editando **mientras** corria una compilacion,
-  asi que las marcas de tiempo quedaron en un orden que hizo creer a Ninja que el objeto estaba al
-  dia. Es la misma trampa que el apartado 15 documenta para `dlgprefstems.cpp`, con otra causa.
-- **Arreglo**: `find_stale_objs.ps1` (busca objetos mas viejos que las cabeceras cambiadas y que las
-  mencionan), borrar los 47 que salieron y recompilar. **Comprobado arrancando el MSI extraido**:
-  sobrevive al escaneo (100 s con la ventana principal abierta y 1 GB de memoria) donde el 2.7.3
-  moria. La comprobacion se repitio con el paquete final (2.7.5) y el detector se pasa **antes** de
-  empaquetar, como manda la regla de abajo.
-- **Nota sobre los nombres**: CPack nombra el fichero con la version del *proyecto*, asi que el MSI
-  sale siempre como `mixxx-2.7-alpha-...-amd64.msi`. `package-msi.cmd` lo renombra al copiarlo
-  (`mixxx-2.7.5-stem-engine-amd64.msi`) para que en la carpeta de entrega haya una sola copia y se
-  sepa cual es. El `.deb` conserva su nombre y su version (`2.7.0-alpha`), asi que para instalar
-  encima de uno anterior hace falta `apt install --reinstall ./...deb`.
-- **Regla para las proximas tandas**: pasar `find_stale_objs.ps1` **antes de empaquetar**, y no
-  editar fuentes con una compilacion en marcha.
+- **New manifest** `res/stems/engine-linux.json`, generated with `tools/make_manifest.py`
+  (the same tool from the lab, with three changes):
+  - it accepts **several `--platform` tags**, because pip does not expand a `manylinux` family into
+    the others and these packages do not match in any: numpy publishes `manylinux_2_28`,
+    `imageio-ffmpeg` is still on `manylinux2014` and `soxr` on `manylinux_2_27`;
+  - `--runtime-strip-prefix python`: the python-build-standalone interpreter comes inside a
+    single `python/` directory, and the engine wants it in `runtime/bin/python3`;
+  - `--no-nvidia`: the Linux CUDA variant resolves to `onnxruntime-gpu` 1.26 with cu12 wheels
+    while the CPU one goes to 1.31, and as both install the same `onnxruntime` package they
+    would overwrite each other's files. It is left out on purpose, instead of offering a half engine.
+  - Content: `cpython 3.11.17` interpreter (46.7 MB), 14 wheels and the same models. Installation
+    of 438.1 MB with the fp32 model and 287.3 MB with the fp16.
+- **The installer** (`stemengineinstaller.{h,cpp}`):
+  - picks the manifest by platform (`engine.json` on Windows, `engine-linux.json` on the rest,
+    falling back to the first if it is not there);
+  - does not keep a variant the list does not have: without this, the automatic CUDA suggestion
+    left the selection pointing at a variant that does not exist on Linux;
+  - passes the interpreter a `PYTHONPATH` with the engine's `site-packages` folder. On Windows that is
+    done by the `._pth` the installation writes; on Linux there is no such file;
+  - gives **execute permission** to the `ffmpeg` of `imageio_ffmpeg`, which travels inside a ZIP and
+    therefore without the execute bit;
+  - **cancel** is no longer confused with failing: the interrupted extraction does not call `finish()`
+    and the installation is not marked as done.
+- **Tar reader** `src/stems/tararchive.{h,cpp}`: gzip over zlib and tar with the extensions the
+  packaging tools use (ustar, GNU long name and long link, PAX headers),
+  **symbolic and hard links**, mode of each file and trimming of a prefix. Nothing is written
+  outside the destination, just like in the ZIP reader. The extraction reports progress in compressed
+  bytes and can be interrupted from the call, which is what cancellation uses.
+- **Tests** `src/test/tararchive_test.cpp`, inside the project's suite and without support
+  files (the test builds the tar and compresses it itself): prefix trimming, execute
+  permission, relative link, long name, rejection of paths that leave the destination, extraction
+  without prefix and cancellation. **All four pass on Windows and on Linux** (`mixxx-test
+  --gtest_filter=TarArchiveTest.*`), which is the only way to check links and permissions.
+  Two notices that cost a round: `QFile::readAll()` without `open()` returns empty, and in Qt 6
+  `symLinkTarget()` returns the resolved **absolute** path, so the test reads the link with
+  `readlink()` to check that it was stored relative.
+- **Real validation** `tools/validate_linux_engine.py`: downloads the interpreter, the wheels and the
+  model from the manifest itself, places the worker and the `huggingface_hub` substitute the way the
+  installer does, grants permission to `ffmpeg`, and separates a 12 s test track to write
+  a `.stem.mp4`. It is what answers the question the manifest cannot: whether the engine starts
+  on Linux. **Verified in WSL (Ubuntu 24.04)**: interpreter 3.11.17, 14 wheels, `ffmpeg-linux-x86_64-v7.0.2`
+  from the wheel itself, 12 s separation in 19.9 s of CPU and a 1.9 MB `.stem.mp4` that its
+  verifier accepts (5 tracks, manifest and offset tables).
+- **Verified by the user**: stem generation works **on Linux** installing the engine from
+  Preferences and **on Windows**, that is, the whole engine path on Linux (manifest,
+  download, `tar.gz` with links, permissions and execution) is also validated from the application,
+  not only with the validation script.
+- **What still has no explanation**: a few black icons in the Mic/Aux section on Linux. It has been
+  ruled out that the SVGs are missing (they are in the package), that there are case discrepancies in
+  the paths (128 references checked, 0 discrepancies) and that some declared package does not exist
+  (71 out of 71 correct). The data from the affected machine is missing.
 
 
-## 20. El motor en Linux con GPU (variante CUDA)
 
-El manifiesto de Linux nacio con una sola variante (`cpu`). En esta tanda se le ha anadido la de
-GPU y se ha comprobado **de verdad** sobre una RTX 3060.
+## 19. The Windows package that did not start (stale objects, again)
 
-- **Que lleva la variante**: los mismos ficheros comunes y los mismos modelos, pero con
-  `onnxruntime-gpu 1.26` en lugar del `onnxruntime` normal, mas las ruedas de CUDA que necesita
-  (`nvidia-cublas-cu12`, `nvidia-cudnn-cu12` y compania). En total 1.894,5 MB frente a los 263,5 MB
-  de la de CPU: por eso la de GPU se ofrece aparte y no por defecto.
-- **Dos trampas del generador de manifiestos** (`tools/make_manifest.py`):
-  - `onnxruntime` y `onnxruntime-gpu` **no se pueden compartir** entre variantes: cada una necesita
-    la suya. Para eso esta `VARIANT_SPECIFIC_WHEELS`.
-  - Los extras de pip llevan comas, asi que la opcion `--nvidia-requirements` los pide separados
-    por `;` y es la herramienta la que los parte.
-- **Lo que faltaba en el codigo**: las ruedas de NVIDIA no estan en `site-packages` a secas, sino
-  en `site-packages/nvidia/*/lib`, y el cargador de Linux no mira ahi. `StemGenerator` ahora anade
-  esas carpetas a `LD_LIBRARY_PATH` (solo fuera de Windows) al montar el entorno del worker, junto
-  a `PYTHONPATH` y `STEM_ENGINE_MODELS`.
-- **Comprobado en WSL (Ubuntu 24.04) con la RTX 3060** (`validate_linux_engine.py --variant=nvidia`):
-  el sondeo lista `[TensorrtExecutionProvider, CUDAExecutionProvider, CPUExecutionProvider]` con
-  `has_cuda: true`, y la separacion de los mismos 12 s de audio baja de **19,0 s (CPU) a 12,8 s
-  (GPU)** dejando un `.stem.mp4` que el verificador acepta.
-- **Trampa al validar**: el manifiesto habla de variantes (`cpu`, `nvidia`), pero el worker habla de
-  proveedores (`cpu`, `cuda`, `auto`). Pasar `--provider nvidia` falla con `invalid choice`; el
-  script de validacion traduce la variante antes de llamarlo.
-- **Lo que llevan los paquetes**: el `.deb` se rehizo despues de este trabajo, asi que su manifiesto
-  trae las dos variantes y su binario el cambio de `LD_LIBRARY_PATH` (comprobado: el binario
-  empaquetado es el compilado, 594 MB con simbolos -> 25 MB `stripped`, y el manifiesto de dentro
-  tiene el mismo hash que el de `res/stems/`). El MSI se reempaqueto como **2.7.5** para que Windows
-  lleve exactamente el mismo codigo, aunque el cambio de librerias solo actua fuera de Windows
-  (`#ifndef Q_OS_WIN`): en Windows esas carpetas van en `PATH`, que es lo que ya hacia.
+The 2.7.3 MSI **died on startup on Windows**: the splash screen showed and it disappeared. On
+Linux the same code was fine, which was the first clue (on Linux GCC keeps dependency files;
+with MSVC and Ninja not always).
+
+- **Diagnosis**: the Windows event log gave the failing module —
+  `Qt6Core.dll`, `0xc0000005` — which with such a low offset is a corrupted pointer, not a
+  Qt failure. The test that separated it: the Mixxx installed in `C:\Program Files` (a previous
+  build, same music, same scan) **started fine**, so the failure was in this build.
+- **Cause**: `stemgenerator.cpp.obj` was **older** than `stemengineinstaller.h`. That header had
+  grown (`m_unpackCancelled`, `manifestHasVariant`, `stripPrefix`) and that file is exactly the one
+  that builds the installer, so it reserved the old class size and the constructor wrote
+  outside the reserved memory. The corruption showed up later, when scanning the library, and that is
+  why the symptom was "it stays on the logo".
+- **Why Ninja did not see it**: the sources were being edited **while** a build was running, so
+  the timestamps ended up in an order that made Ninja believe the object was up to date. It is the same
+  trap that section 15 documents for `dlgprefstems.cpp`, with another cause.
+- **Fix**: `find_stale_objs.ps1` (looks for objects older than the changed headers that mention
+  them), delete the 47 that came out and rebuild. **Verified by starting the extracted MSI**: it
+  survives the scan (100 s with the main window open and 1 GB of memory) where 2.7.3
+  died. The check was repeated with the final package (2.7.5) and the detector is run **before**
+  packaging, as the rule below demands.
+- **Note about the names**: CPack names the file with the *project* version, so the MSI always
+  comes out as `mixxx-2.7-alpha-...-amd64.msi`. `package-msi.cmd` renames it when copying it
+  (`mixxx-2.7.5-stem-engine-amd64.msi`) so that there is a single copy in the delivery folder and
+  it is known which one it is. The `.deb` keeps its name and its version (`2.7.0-alpha`), so to
+  install on top of a previous one `apt install --reinstall ./...deb` is needed.
+- **Rule for the next batches**: run `find_stale_objs.ps1` **before packaging**, and do not
+  edit sources with a build running.
 
 
-## 21. El icono del muelle (Plank) y el lanzador que no valia
+## 20. The engine on Linux with a GPU (CUDA variant)
 
-En Linux la aplicacion arranca y se ve, pero en Plank (el muelle) salia con el icono generico, y el
-lanzador no aparecia donde debia. Las dos causas se midieron, no se supusieron.
+The Linux manifest was born with a single variant (`cpu`). In this batch the GPU one has been added
+and it has been verified **for real** on an RTX 3060.
 
-- **Causa 1: el fichero `.desktop` generado no era valido**. El original (`res/linux/org.mixxx.Mixxx.desktop`)
-  venia con finales de linea de Windows y el `sed` del `postinst` solo reescribia las lineas que
-  cambiaba (`Name`, `Exec`, `Icon`, `StartupWMClass`), asi que `[Desktop Entry]`, `Type=Application` y
-  `Categories` conservaban el retorno de carro. `desktop-file-validate` lo rechaza con *"file contains
+- **What the variant carries**: the same common files and the same models, but with
+  `onnxruntime-gpu 1.26` instead of the normal `onnxruntime`, plus the CUDA wheels it needs
+  (`nvidia-cublas-cu12`, `nvidia-cudnn-cu12` and company). 1,894.5 MB in total against the 263.5 MB
+  of the CPU one: that is why the GPU one is offered separately and not by default.
+- **Two traps of the manifest generator** (`tools/make_manifest.py`):
+  - `onnxruntime` and `onnxruntime-gpu` **cannot be shared** between variants: each one needs
+    its own. That is what `VARIANT_SPECIFIC_WHEELS` is for.
+  - pip extras carry commas, so the `--nvidia-requirements` option asks for them separated
+    by `;` and the tool is the one that splits them.
+- **What was missing in the code**: the NVIDIA wheels are not in `site-packages` as such, but
+  in `site-packages/nvidia/*/lib`, and the Linux loader does not look there. `StemGenerator` now adds
+  those folders to `LD_LIBRARY_PATH` (only outside Windows) when setting up the worker's environment,
+  together with `PYTHONPATH` and `STEM_ENGINE_MODELS`.
+- **Verified in WSL (Ubuntu 24.04) with the RTX 3060** (`validate_linux_engine.py --variant=nvidia`):
+  the probe lists `[TensorrtExecutionProvider, CUDAExecutionProvider, CPUExecutionProvider]` with
+  `has_cuda: true`, and the separation of the same 12 s of audio drops from **19.0 s (CPU) to 12.8 s
+  (GPU)** leaving a `.stem.mp4` that the verifier accepts.
+- **Trap when validating**: the manifest talks about variants (`cpu`, `nvidia`), but the worker talks
+  about providers (`cpu`, `cuda`, `auto`). Passing `--provider nvidia` fails with `invalid choice`;
+  the validation script translates the variant before calling it.
+- **What the packages carry**: the `.deb` was rebuilt after this work, so its manifest
+  carries both variants and its binary the `LD_LIBRARY_PATH` change (verified: the packaged binary is
+  the compiled one, 594 MB with symbols -> 25 MB `stripped`, and the manifest inside
+  has the same hash as the one in `res/stems/`). The MSI was repackaged as **2.7.5** so that Windows
+  carries exactly the same code, although the library change only acts outside Windows
+  (`#ifndef Q_OS_WIN`): on Windows those folders go in `PATH`, which is what it already did.
+
+
+## 21. The dock icon (Plank) and the launcher that was no good
+
+On Linux the application starts and is visible, but in Plank (the dock) it came out with the generic
+icon, and the launcher did not appear where it should. Both causes were measured, not assumed.
+
+- **Cause 1: the generated `.desktop` file was not valid**. The original (`res/linux/org.mixxx.Mixxx.desktop`)
+  came with Windows line endings and the `postinst` `sed` only rewrote the lines it
+  changed (`Name`, `Exec`, `Icon`, `StartupWMClass`), so `[Desktop Entry]`, `Type=Application` and
+  `Categories` kept the carriage return. `desktop-file-validate` rejects it with *"file contains
   at least one line ending with a carriage return, while lines should only be separated by a line feed
-  character"* (53 bytes CR en total), y un lanzador invalido se ignora: ni entrada de menu ni
-  asociacion con la ventana, y de ahi el icono generico. **Arreglo**: `tr -d '\r'` sobre el fichero
-  entero antes de reescribirlo, que ademas deja de depender de donde venga el original.
-- **Causa 2: `StartupWMClass` no era el de verdad**. La entrada original declara
-  `org.mixxx.mixxx`, que es el `app_id` de Wayland (`QGuiApplication::setDesktopFileName`), pero en
-  X11 Mixxx reporta otra cosa. Medido con un servidor X virtual y `xprop`:
-  `WM_CLASS(STRING) = "mixxx", "Mixxx"`. **Arreglo**: `StartupWMClass=mixxx`, que en las
-  comparaciones sin distinguir mayusculas cubre las dos partes (`mixxx` es la instancia y `Mixxx` la
-  clase).
-- **Y el icono, por nombre**: apuntaba a una ruta absoluta de un SVG fuera del tema. Ahora los PNG
-  que ya trae el paquete se copian al tema de iconos como `mixxx-stem-engine` (`32x32` a `512x512`)
-  y la entrada usa `Icon=mixxx-stem-engine`: nombre propio, asi que se resuelve como cualquier
-  aplicacion y **no toca** los iconos `mixxx` del paquete oficial. El `postrm` los borra, y el
-  `purge` se comprobo de nuevo: no queda ni el lanzador, ni la entrada, ni los iconos.
-- **Como se comprobo todo esto** (en WSL, sin pantalla): instalar el `.deb`, `desktop-file-validate`
-  (ahora sin errores, 0 retornos de carro), listar los iconos en
-  `/usr/share/icons/hicolor/*/apps/`, y medir `WM_CLASS` arrancando Mixxx bajo `Xvfb` y leyendo la
-  ventana con `xprop`. Los scripts de comprobacion quedan en la carpeta de la sesion
+  character"* (53 CR bytes in total), and an invalid launcher is ignored: no menu entry and no
+  association with the window, hence the generic icon. **Fix**: `tr -d '\r'` over the whole
+  file before rewriting it, which also stops depending on where the original comes from.
+- **Cause 2: `StartupWMClass` was not the real one**. The original entry declares
+  `org.mixxx.mixxx`, which is the Wayland `app_id` (`QGuiApplication::setDesktopFileName`), but on
+  X11 Mixxx reports something else. Measured with a virtual X server and `xprop`:
+  `WM_CLASS(STRING) = "mixxx", "Mixxx"`. **Fix**: `StartupWMClass=mixxx`, which in the
+  case-insensitive comparisons covers both parts (`mixxx` is the instance and `Mixxx` the
+  class).
+- **And the icon, by name**: it pointed at an absolute path of an SVG outside the theme. Now the PNGs
+  the package already carries are copied to the icon theme as `mixxx-stem-engine` (`32x32` to `512x512`)
+  and the entry uses `Icon=mixxx-stem-engine`: a name of its own, so it resolves like any
+  application and **does not touch** the `mixxx` icons of the official package. The `postrm` deletes
+  them, and `purge` was checked again: neither the launcher, nor the entry, nor the icons are left.
+- **How all this was checked** (in WSL, without a screen): install the `.deb`, `desktop-file-validate`
+  (now without errors, 0 carriage returns), list the icons in
+  `/usr/share/icons/hicolor/*/apps/`, and measure `WM_CLASS` starting Mixxx under `Xvfb` and reading the
+  window with `xprop`. The check scripts are kept in the session folder
   (`check_icon_desktop.sh`, `check_icon_theme.sh`).
-- **Lo que hay que hacer tras actualizar**: reinstalar el `.deb` y reiniciar Plank (o cerrar sesion y
-  volver a entrar), porque el muelle lee los lanzadores al arrancar.
-- **Una lectura que era falsa alarma**: en la onda se ve un recuadro con `CUE` y, debajo, un `1`
-  rosa. No dice `CUT`: es la marca `cue_point` de la piel (`LateNightQML` y compania la dibujan con
-  el texto `CUE`) junto con la insignia del hotcue 1, y aparece en **cada** onda de la pista (la de
-  arriba, la principal y las de los dos platos), que es lo que hace parecer que se repite.
+- **What to do after updating**: reinstall the `.deb` and restart Plank (or log out and
+  back in), because the dock reads the launchers on startup.
+- **A reading that was a false alarm**: on the waveform a box with `CUE` is seen and, below it, a pink
+  `1`. It does not say `CUT`: it is the `cue_point` mark of the skin (`LateNightQML` and company draw
+  it with the text `CUE`) together with the hotcue 1 badge, and it appears on **every** waveform of the
+  track (the top one, the main one and the two platters'), which is what makes it look like it repeats.
 
 
-## 22. MIC/AUX y ranuras de efectos vacias en Linux (componentes atados a su contexto)
+## 22. MIC/AUX and effect slots empty on Linux (components bound to their context)
 
-En Linux, la seccion MIC/AUX salia como cajas vacias (los `MIC 1..4` / `AUX 1..4` no aparecian) y las
-ranuras de efectos tampoco dibujaban sus parametros. En Windows se veia bien. El registro de la
-aplicacion lo dijo sin ambiguedad:
+On Linux, the MIC/AUX section came out as empty boxes (the `MIC 1..4` / `AUX 1..4` did not appear) and
+the effect slots did not draw their parameters either. On Windows it looked fine. The application
+log said it without ambiguity:
 
 ```
 PulseDeck/MicAux/MicUnit.qml: Cannot instantiate bound component outside its creation context
@@ -670,114 +664,118 @@ PulseDeck/MicAux/AuxUnit.qml: ...
 PulseDeck/Effects/EffectSlot.qml: ...
 ```
 
-- **Causa**: esos ficheros llevan `pragma ComponentBehavior: Bound` (el modo moderno de QML) y a la vez
-  entregan sus bloques `Component {}` a un `Loader.sourceComponent`. Qt prohibe justo esa
-  combinacion: un componente *atado* a su contexto no se puede instanciar fuera de el, y el `Loader`
-  lo intenta. El item no se crea, el `Loader` queda vacio y la unidad se dibuja como una caja.
-  En Windows no se veia porque la version de Qt del paquete de dependencias no aplica esa restriccion.
-- **Arreglo**: quitar el `pragma` de esos ficheros (`MicUnit.qml`, `AuxUnit.qml` y `EffectSlot.qml`
-  en las tres pieles QML: `PulseDeck`, `LateNightQML` y `NeonDeck`). Es un cambio de una linea por
-  fichero: vuelve al comportamiento de siempre, que es el que el codigo espera, y no toca nada mas.
-- **Comprobado en Linux, con MIC/AUX y efectos activados** (`[Skin] show_microphones=1`,
-  `show_effectrack=1`): antes del arreglo, tres avisos por unidad; despues, **cero** avisos
-  `outside its creation context`, y una captura de la ventana muestra `MIC 1..4` y `AUX 1..4` con sus
-  botones, igual que en Windows.
-- **Como se reproduce sin pantalla**: `Xvfb`, arrancar el binario con `QT_QPA_PLATFORM=xcb`, y para
-  la captura cerrar el asistente de primer arranque con `xdotool key Escape` (si no, lo que se
-  fotografia es el dialogo de "elige tu carpeta de musica", que tapa la ventana principal).
-- **Pendiente en el registro**: los avisos de `qml/ApplicationMenu*.qml` (`TypeError: Cannot read
-  property 'length' of undefined`, `Unable to assign [undefined]`), que apuntan a los menus de la
-  aplicacion. Son ruido aparte y no impiden arrancar; quedan para la siguiente tanda junto con el
-  detalle de la marca `CUE` que parpadea.
+- **Cause**: those files carry `pragma ComponentBehavior: Bound` (the modern QML mode) and at the same
+  time hand their `Component {}` blocks to a `Loader.sourceComponent`. Qt forbids exactly that
+  combination: a component *bound* to its context cannot be instantiated outside it, and the `Loader`
+  tries to. The item is not created, the `Loader` stays empty and the unit is drawn as a box.
+  On Windows it was not seen because the Qt version of the dependency package does not apply that
+  restriction.
+- **Fix**: remove the `pragma` from those files (`MicUnit.qml`, `AuxUnit.qml` and `EffectSlot.qml`
+  in the three QML skins: `PulseDeck`, `LateNightQML` and `NeonDeck`). It is a one-line change per
+  file: it goes back to the usual behaviour, which is what the code expects, and it touches nothing
+  else.
+- **Verified on Linux, with MIC/AUX and effects enabled** (`[Skin] show_microphones=1`,
+  `show_effectrack=1`): before the fix, three notices per unit; afterwards, **zero** notices
+  `outside its creation context`, and a capture of the window shows `MIC 1..4` and `AUX 1..4` with their
+  buttons, just like on Windows.
+- **How to reproduce it without a screen**: `Xvfb`, start the binary with `QT_QPA_PLATFORM=xcb`, and for
+  the capture close the first-run assistant with `xdotool key Escape` (otherwise what gets
+  photographed is the "choose your music folder" dialog, which covers the main window).
+- **Pending in the log**: the notices from `qml/ApplicationMenu*.qml` (`TypeError: Cannot read
+  property 'length' of undefined`, `Unable to assign [undefined]`), which point at the application
+  menus. They are separate noise and do not prevent starting; they are left for the next batch
+  together with the detail of the flashing `CUE` mark.
 
 
-## 23. La marca CUE que parpadeaba sobre la onda (sin cue puesto)
+## 23. The CUE mark that flashed over the waveform (with no cue set)
 
-Sobre la onda aparecia un recuadro naranja `CUE` (con su banderin) y, al lado, una insignia rosa con
-un `1`. Se veia aunque el plato no tuviera ningun cue puesto, y **parpadeaba**.
+Over the waveform an orange `CUE` box appeared (with its flag) and, beside it, a pink badge with
+a `1`. It showed even when the deck had no cue set, and it **flashed**.
 
-- **Lo que es**: dos marcas distintas de la piel. El recuadro `CUE` es
-  `Mixxx.WaveformMark { control: "cue_point" }` y la insignia `1` es el hotcue 1 (en estas pistas,
-  importado de Serato). Al tamano real, `CUE` + `1` se lee como "CUT 1".
-- **El parpadeo, medido sobre el video del usuario**: extrayendo los 8,66 s a 10 fotogramas por
-  segundo (90 en total) y recortando la zona de la marca, el recuadro aparece **solo en 4
-  fotogramas** (0,8 s, 7,2 s y 8,3 s). O sea que no es una impresion: la marca se dibuja y se borra.
-  Coincide con que se dibuja en el mismo sitio que el marcador de reproduccion, que se repinta encima
-  cada fotograma.
-- **Por que sale sin cue puesto**: en Mixxx 2.7 el control `cue_point` siempre tiene posicion (0 si no
-  se ha puesto), asi que la marca existe siempre.
-- **Arreglo**: se quita la marca `cue_point` de las ondas de las dos pieles del fork (`PulseDeck` y
-  `NeonDeck`), con un comentario que explica el motivo. `LateNightQML` se deja como esta, porque es la
-  de referencia.
-- **Como se diagnostico un video sin poder verlo**: `ffprobe` para la duracion, `ffmpeg` con
-  `fps=10,crop=...,tile=10x9` para tener los 90 fotogramas del recuadro en una sola imagen y ver en
-  cuales aparece. Es la forma rapida de detectar algo intermitente.
-
-
-## 24. Las imagenes no se instalaban, y los menus a prueba de un singleton raro
-
-Dos cosas pequeñas que salieron del registro de Linux y de comparar arboles.
-
-- **`res/images` no se instalaba en ningun paquete**. El proyecto solo instala
-  `res/images/icons/` (para los iconos del menu del sistema) y el resto de las imagenes las da por
-  hechas desde los recursos de Qt. Pero las pieles y los componentes QML se cargan **desde disco**, y
-  sus referencias relativas (`../images/keywheel/keywheel.svg`) apuntan a `share/mixxx/images`, que no
-  existia: de ahi el `Cannot open: .../images/keywheel/keywheel.svg` y el hueco en el dialogo del
-  circulo de tonalidades. **Arreglo**: una regla `install(DIRECTORY res/images ...)` junto a la de
-  las pieles, que son 136 ficheros y 2,1 MB. Comprobado que el `.deb` llevaba **cero** ficheros de
-  `images/` antes del cambio. Sorpresa util: puede tapar huecos parecidos en otras ventanas.
-- **`Mixxx.Application` en los menus**. En el equipo del usuario, con su version de Qt,
-  `Mixxx.Application` no resuelve al proxy de Mixxx sino a un `QQuickApplication`, asi que
-  `menuShortcut` y `textInputFocused` llegan indefinidos y **todos** los `Action` de los menus se
-  quedan sin atajo. En el Linux de compilacion (Qt 6.4.2) no se reproduce: el `.deb` lleva el QML
-  correcto y arranca sin un solo aviso, asi que es cosa del entorno. **Arreglo defensivo**: en
-  `res/qml/ApplicationMenuActions.qml` el proxy se lee una sola vez en una propiedad y las dos
-  llamadas van con comprobacion, de modo que si no esta se usa el atajo por defecto en lugar de
-  romper el menu entero. Falta confirmar la version de Qt del equipo afectado
-  (`qmake6 -query QT_VERSION`) para saber si hay que hacer algo mas.
+- **What it is**: two different marks of the skin. The `CUE` box is
+  `Mixxx.WaveformMark { control: "cue_point" }` and the `1` badge is hotcue 1 (on these tracks,
+  imported from Serato). At real size, `CUE` + `1` reads as "CUT 1".
+- **The flashing, measured on the user's video**: extracting the 8.66 s at 10 frames per
+  second (90 in total) and cropping the mark area, the box appears **in only 4
+  frames** (0.8 s, 7.2 s and 8.3 s). So it is not an impression: the mark is drawn and erased.
+  It matches the fact that it is drawn in the same place as the play marker, which is repainted on top
+  every frame.
+- **Why it shows with no cue set**: in Mixxx 2.7 the `cue_point` control always has a position (0 if
+  none has been set), so the mark always exists.
+- **Fix**: the `cue_point` mark is removed from the waveforms of the fork's two skins (`PulseDeck` and
+  `NeonDeck`), with a comment explaining the reason. `LateNightQML` is left as it is, because it is
+  the reference one.
+- **How a video was diagnosed without being able to watch it**: `ffprobe` for the duration, `ffmpeg`
+  with `fps=10,crop=...,tile=10x9` to have the 90 frames of the box in a single image and see in
+  which ones it appears. It is the quick way to detect something intermittent.
 
 
-## 25. El icono de verdad era la cache, el parpadeo era el bucle de dibujo, y el stem duplicado era mio
+## 24. The images were not installed, and menus proof against a strange singleton
 
-Tres cosas cerradas con comprobacion, ya sobre el equipo del usuario.
+Two small things that came out of the Linux log and of comparing trees.
 
-- **El icono (menu, muelle y lanzador) era la resolucion del tema, no los ficheros**. Los ficheros
-  estaban bien instalados y el `.desktop` validaba, pero el menu y Plank resolvian el icono **por
-  nombre** y no lo encontraban: `icon-theme.cache` no lo indexaba. Primer intento, regenerar la cache
-  con `gtk-update-icon-cache -f -t` desde el `postinst`; en el laboratorio funciono, pero en el
-  equipo del usuario la herramienta **no esta instalada** (Mint), el `postinst` la salta y el icono
-  siguio saliendo como la rueda generica (`grep -c mixxx-stem-engine` sobre la cache daba **0**).
-  **Arreglo definitivo**: el `.desktop` no usa un nombre de tema, apunta al **fichero** (ruta
-  absoluta al PNG de 256x256 dentro del prefijo), asi que no depende ni de la cache ni de que exista
-  la herramienta. Los iconos se siguen copiando al tema y la cache se regenera **si** la herramienta
-  esta, como extra para otros lanzadores; el `postrm` lo deja todo limpio.
-- **Y faltaba lo de fondo: Mixxx no ponia icono de ventana**. Ni `setWindowIcon` ni un `.ico` en Linux,
-  asi que el muelle y la barra de tareas, que muestran el icono **de la ventana** y no el del
-  `.desktop`, caian siempre en el generico. Ahora `main.cpp` carga los PNG instalados (desde la ruta
-  de recursos si viene en la linea de comandos y, si no, desde `<prefijo>/share/mixxx` calculado a
-  partir del ejecutable, porque en ese punto la ruta aun no esta resuelta) y llama a `setWindowIcon`.
-  Comprobado midiendo la propiedad `_NET_WM_ICON` con `xprop` sobre la ventana de Mixxx en un servidor
-  X virtual: **antes ausente, ahora presente** en las dos ventanas (splash y principal).
-- **El parpadeo de la onda era el bucle de dibujo, no la grafica**. El registro se llenaba de
+- **`res/images` was not installed in any package**. The project only installs
+  `res/images/icons/` (for the system menu icons) and assumes the rest of the images are
+  provided by Qt's resources. But the skins and the QML components are loaded **from disk**, and
+  their relative references (`../images/keywheel/keywheel.svg`) point at `share/mixxx/images`, which
+  did not exist: hence the `Cannot open: .../images/keywheel/keywheel.svg` and the hole in the key
+  circle dialog. **Fix**: an `install(DIRECTORY res/images ...)` rule next to the one for
+  the skins, which is 136 files and 2.1 MB. It was checked that the `.deb` carried **zero** files of
+  `images/` before the change. Useful surprise: it may cover similar holes in other windows.
+- **`Mixxx.Application` in the menus**. On the user's machine, with its Qt version,
+  `Mixxx.Application` does not resolve to the Mixxx proxy but to a `QQuickApplication`, so
+  `menuShortcut` and `textInputFocused` arrive undefined and **all** the `Action`s of the menus are
+  left without a shortcut. On the compilation Linux (Qt 6.4.2) it does not reproduce: the `.deb`
+  carries the correct QML and starts without a single notice, so it is an environment thing.
+  **Defensive fix**: in `res/qml/ApplicationMenuActions.qml` the proxy is read once into a property
+  and every shortcut goes through `configuredMenuShortcut()`, which returns an **empty** shortcut
+  when the proxy is not there — and also when a text input has the focus. The first version armed
+  the default shortcut instead, and it broke the AI box (the default of *Maximize Library* is the
+  space bar), so it was reverted. The Qt version of the affected machine remains to be confirmed
+  (`qmake6 -query QT_VERSION`) to know whether anything else has to be done.
+
+
+## 25. The real icon was the cache, the flicker was the render loop, and the duplicated stem was mine
+
+Three things closed with verification, now on the user's machine.
+
+- **The icon (menu, dock and launcher) was theme resolution, not the files**. The files
+  were properly installed and the `.desktop` validated, but the menu and Plank resolved the icon **by
+  name** and did not find it: `icon-theme.cache` did not index it. First attempt, regenerate the cache
+  with `gtk-update-icon-cache -f -t` from the `postinst`; in the lab it worked, but on the user's
+  machine the tool **is not installed** (Mint), the `postinst` skips it and the icon
+  kept coming out as the generic wheel (`grep -c mixxx-stem-engine` on the cache gave **0**).
+  **Final fix**: the `.desktop` does not use a theme name, it points at the **file** (absolute
+  path to the 256x256 PNG inside the prefix), so it depends neither on the cache nor on the tool
+  existing. The icons are still copied to the theme and the cache is regenerated **if** the tool
+  is there, as an extra for other launchers; the `postrm` leaves everything clean.
+- **And the underlying thing was missing: Mixxx did not set a window icon**. Neither `setWindowIcon`
+  nor an `.ico` on Linux, so the dock and the task bar, which show the icon **of the window** and not
+  the one of the `.desktop`, always fell back to the generic one. Now `main.cpp` loads the installed
+  PNGs (from the resource path if it comes in the command line and, if not, from `<prefix>/share/mixxx`
+  computed from the executable, because at that point the path is not resolved yet) and calls
+  `setWindowIcon`. Verified by measuring the `_NET_WM_ICON` property with `xprop` on the Mixxx window
+  on a virtual X server: **absent before, present now** on both windows (splash and main).
+- **The waveform flicker was the render loop, not the graphics**. The log filled up with
   `VisualPlayPosition::calcOffsetAtNextVSync "[Channel1]" outdated position request (offset <
-  minOffset)`: el dibujo pide la posicion del siguiente fotograma y esa posicion ya paso, asi que
-  Mixxx la recorta y la onda se queda quieta un fotograma y salta al siguiente. Con
-  `QSG_RENDER_LOOP=basic` las lineas bajaron de cientos a 58, y con el modo de vsync ya forzado a
-  temporizador (que es lo que hace `startVSync` con pieles QML) quedaron en 2. **Arreglo**:
-  `main.cpp` fija `QSG_RENDER_LOOP=basic` antes de crear la aplicacion, solo en Linux y solo si el
-  usuario no lo ha fijado el mismo. Detalle importante para el futuro: en pieles QML la clave
-  `[Waveform] VSync` del `mixxx.cfg` **se ignora** (`startVSync` fuerza `ST_TIMER`), asi que aquello
-  no era lo que funcionaba.
-- **El stem duplicado lo provocaba el propio generador**. Al terminar, `StemGenerator` llamaba a
-  `rescanLibrary()`, y el escaneo añadia el `.stem.mp4` como una pista mas: la misma cancion
-  aparecia dos veces. Comprobado con el usuario que **la pista original ya reproduce los stems**
-  (drum, vocals, etc.) y que su columna dice `STEMS`.
-  **Decision final: se deja como estaba**, con el rescaneo automatico. Las dos filas se ven a
-  proposito: son el aviso de que la conversion se hizo, y el usuario prefiere eso a que la marca
-  aparezca sin mas. Ocultar los `.stem.mp4` cuando su original esta al lado (y seguir marcando el
-  original) queda **para una version siguiente**; el escaner de Mixxx por ahora no empareja ambas
-  cosas. El metodo `rescanLibrary()` sigue ademas disponible en un boton de la pagina Stems de
-  Preferencias.
+  minOffset)`: the drawing asks for the position of the next frame and that position has already gone
+  by, so Mixxx clamps it and the waveform stays still for a frame and jumps to the next one. With
+  `QSG_RENDER_LOOP=basic` the lines dropped from hundreds to 58, and with the vsync mode already
+  forced to timer (which is what `startVSync` does with QML skins) they went down to 2. **Fix**:
+  `main.cpp` sets `QSG_RENDER_LOOP=basic` before creating the application, only on Linux and only if
+  the user has not set it themselves. Important detail for the future: in QML skins the
+  `[Waveform] VSync` key of `mixxx.cfg` **is ignored** (`startVSync` forces `ST_TIMER`), so that
+  was not what worked.
+- **The duplicated stem was caused by the generator itself**. On finishing, `StemGenerator` called
+  `rescanLibrary()`, and the scan added the `.stem.mp4` as one more track: the same song
+  appeared twice. It was checked with the user that **the original track already plays the stems**
+  (drum, vocals, etc.) and that its column says `STEMS`.
+  **Final decision: it is left as it was**, with the automatic rescan. The two rows are seen on
+  purpose: they are the notice that the conversion happened, and the user prefers that to the mark
+  appearing without more. Hiding the `.stem.mp4` files when their original is next to them (and still
+  marking the original) is left **for a next version**; Mixxx's scanner for now does not pair both
+  things. The `rescanLibrary()` method also remains available on a button of the Stems page of
+  Preferences.
 
 
 

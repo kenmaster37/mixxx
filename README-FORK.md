@@ -199,7 +199,7 @@ version.
 
 ## 9. Details of the changes and status
 
-Development is documented in [`CAMBIOS.md`](CAMBIOS.md) (in Spanish), section by section: what was
+Development is documented in [`CAMBIOS.md`](CAMBIOS.md), section by section: what was
 changed, why, what was discarded and what is pending.
 
 ## Credits and licences
