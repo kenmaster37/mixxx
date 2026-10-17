@@ -158,6 +158,16 @@ Los instaladores de la última tanda están publicados juntos en la página de *
 | [`mixxx-2026-10-16-stem-engine-amd64.msi`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-16/mixxx-2026-10-16-stem-engine-amd64.msi) | **Windows** 10/11 x64 |
 | [`mixxx-2026-10-16-stem-engine-amd64.deb`](https://github.com/kenmaster37/mixxx/releases/download/v2.7.0-alpha-2026-10-16/mixxx-2026-10-16-stem-engine-amd64.deb) | **Linux** amd64 (Ubuntu 24.04 / Mint) |
 
+Para comprobar que lo descargado es lo publicado:
+
+```
+sha256  mixxx-2026-10-16-stem-engine-amd64.msi  87647f50ad7a68ea7576a525aae13e27aaddde97193a1cff089521745db86074
+sha256  mixxx-2026-10-16-stem-engine-amd64.deb  607ce430b128e958dde77b3118e94d807692972e29dc6f3c8ecf39a5077e31bc
+```
+
+El `.deb` se regeneró el 17 por la mañana con el **icono de ventana** y el lanzador con ruta absoluta al
+icono; el `.msi` es el mismo de la noche anterior porque esos arreglos son solo de Linux.
+
 La tanda anterior sigue disponible en
 [`v2.7.0-alpha-2026-10-15`](https://github.com/kenmaster37/mixxx/releases/tag/v2.7.0-alpha-2026-10-15).
 
