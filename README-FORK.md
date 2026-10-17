@@ -61,24 +61,23 @@ Y el panel de la barra (*STEMS*) muestra el entorno detectado, el interruptor de
 
 ![Panel de stems con la cola](docs/fork/stems-cola.png)
 
-### El entorno de Python no se instala solo
+### El motor se instala desde Preferencias
 
-Mixxx **no** trae Python ni las dependencias de la separación: el worker corre en un entorno
-propio porque ONNX Runtime ocupa cientos de MB y no tiene sentido dentro de una aplicación de
-DJ. Lo que sí está en el repositorio es el worker (`res/stems/stems_worker.py` + `stem_mp4.py`:
-se instalan junto a la aplicación y no hay que tocar nada) y el instalador del entorno:
+Mixxx **no** lleva dentro el motor de separación: son cientos de MB (ONNX Runtime, las ruedas de
+Python y los modelos), así que se descarga aparte y se instala en una carpeta propia, sin tocar
+nada del sistema. Se hace desde **Preferencias → Stems → Engine**, con progreso y botón de
+cancelar:
 
-```bash
-python res/stems/setup_venv.py            # con GPU NVIDIA (CUDA)
-python res/stems/setup_venv.py --cpu      # sin GPU: usa la CPU (unas 4x más lento)
-```
+| Variante | Qué baja | Para quién |
+| --- | --- | --- |
+| **CPU** | intérprete de Python autocontenido, las ruedas de la plataforma y los modelos | cualquier equipo |
+| **GPU (CUDA)** | lo mismo, más ONNX Runtime con CUDA y las ruedas de NVIDIA | equipos con GPU NVIDIA |
 
-Crea el entorno en la carpeta que Mixxx consulta por defecto
-(`<configuración>/stems/venv`, es decir `%LOCALAPPDATA%\Mixxx\stems\venv` en Windows o
-`~/.mixxx/stems/venv` en Linux) e imprime la ruta del intérprete que hay que pegar en
-*Preferencias → Stem Generation → Intérprete*. Si se deja vacío, Mixxx busca ahí; y si tampoco
-existe, usa el `python` del PATH. **Aparte del intérprete hace falta `ffmpeg`** en el PATH (para
-empaquetar el `.stem.mp4`): el worker lo llama por nombre.
+Medido con una RTX 3060: **~10× el tiempo real** (20 s por cada 4 minutos de canción) frente a
+**~2,4×** con CPU. El motor trae **su propio `ffmpeg`**, así que no hace falta instalar Python,
+pip, compilador ni nada en el PATH; y se puede borrar desde ese mismo panel. En Linux se
+desempaqueta un `tar.gz` y en Windows un ZIP, con un lector propio en C++ que respeta permisos y
+enlaces simbólicos y permite cancelar a mitad.
 
 ## 3. Asistente de IA para el AutoDJ
 
