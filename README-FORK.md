@@ -164,11 +164,11 @@ The installers of the last batch are published together on the fork's **releases
 To check that what you downloaded is what was published:
 
 ```
-sha256  mixxx-2026-10-17-stem-engine-amd64.msi  2a1dc504daca3dd775ae0aa9d441f628ea5e8762271adb79c28f352157db6efc
-sha256  mixxx-2026-10-17-stem-engine-amd64.deb  d1e9f32dfe10fcf0728ae2524dbeaead21389c8b56cfbb11a26c8b77ad17f417
+sha256  mixxx-2026-10-17-stem-engine-amd64.msi  f47ef18ab072b780a6f497e9e9f99de2943e6326ff5225773cd28da335ebd84d
+sha256  mixxx-2026-10-17-stem-engine-amd64.deb  091e3374508033eac0c054cc2efade4b96248e43b0d6c7d49ae96776fd0a2e1c
 ```
 
-The MSI is packaged as version **2.8.2** (the project is 2.7.0): with the same upgrade GUID and the
+The MSI is packaged as version **2.8.5** (the project is 2.7.0): with the same upgrade GUID and the
 same version number Windows refuses to install on top of the previous test package with error 1638.
 
 The previous batches are still available at
@@ -209,7 +209,7 @@ work on the MIC/AUX rack.
 | **The effect volume knob stays.** That knob is what sets how much effect you hear, so it was never an option to drop it: it sits under the name line, and the name is what moved. Hovering the name shows it in full. | ![Effect names before the fix](docs/fork/fx-nombres-antes.png) |
 | **Peak hold on the VU meters.** The bars keep a mark on the peak for half a second and then let it fall, instead of dropping straight back with the level. Applies to the channel meters, the main mix and mic/aux in the three skins. | ![Peak hold](docs/fork/vu-pico.png) |
 | **Talkover and main mix no longer jump to 0.** Releasing the primary button while the secondary was still held wrote a 0 into the control. The power-window buttons now latch and leave the value alone. This one is in `res/qml/ControlProxyButtonBehavior.qml`, shared by all three skins. | — |
-| **A controller is mapped the first time it is seen.** Mixxx opens only the mapping the configuration remembers, and it remembers it as an absolute path: a device never seen before, or an installation that moved, was left with no mapping and dead buttons. A mapping whose `<controller id>` is the device name is now picked up and the device enabled automatically. A `Numark Mixtrack Pro II` preset with the id the hardware reports was added, because the existing one declares `MixTrack` and never matched. | — |
+| **A controller is mapped the first time it is seen.** Mixxx opens only the mapping the configuration remembers, and it remembers it as an absolute path: a device never seen before, or an installation that moved, was left with no mapping and dead buttons. A mapping whose `<controller id>` is the device name is now picked up and the device enabled automatically. A `Numark Mixtrack Pro II` preset with the id the hardware reports was added, because the existing one declares `MixTrack` and never matched. **The first time, restart Mixxx once**: the mapping is found during startup but the MIDI port is usually still held by the process that was just closed. | — |
 
 The last two come from upstream's PR #17292 (`lateNight-qml-mic-aux-parity`) and were ported by
 hand. The rest of that PR — the pixel-for-pixel rewrite of the MIC/AUX geometry — was left out on

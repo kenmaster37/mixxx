@@ -842,6 +842,17 @@ taking the buttons; before it worked"*.
   uninstalling one taking the other's files. The isolated package exists so that trying this fork
   does not replace the official one. The problem was the absolute path in the configuration, not the
   folder name, and that is what is fixed.
+- **Two mistakes of mine on the way there**, both found in the user's log: the search was silent when
+  it found nothing (no way to tell "no mapping" from "not looking"), and it checked `exists()`
+  instead of `isFile()`. With an empty configured name, `findMappingFile()` returns
+  `QDir(path).absoluteFilePath("")`, which is the mapping **folder**: it exists, so the empty case was
+  taken as a valid mapping, the search never ran, and the directory handed to `loadMapping()` failed
+  in silence. It now asks for a file.
+- **First start after installing**: the mapping and the `[Controller] … = 1` are written during
+  "Setting up devices" of that very run, but the MIDI port is usually still held by the process that
+  was closed before, so the controller may only answer after **restarting Mixxx once**. From then on
+  it loads by itself, because the lookup only runs when a device has no mapping.
+
 
 
 
